@@ -1,0 +1,21 @@
+KEYPOINT_LABELS = {
+    0: "head",
+    1: "l_eye",
+    2: "r_eye",
+    3: "l_shoulder",
+    4: "r_shoulder",
+    5: "l_elbow",
+    6: "r_elbow",
+    7: "l_wrist",
+    8: "r_wrist",
+    9: "l_hip",
+    10: "r_hip",
+    11: "l_knee",
+    12: "r_knee",
+    13: "l_foot",
+    14: "r_foot",
+    15: "club_grip",
+    16: "hand",
+    17: "club_shaft",
+    18: "club_hosel"
+}
