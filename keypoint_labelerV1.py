@@ -24,7 +24,6 @@ class KeypointLabeler:
         # Data storage
         self.image_folder = None
         self.annotation_file = None
-        self.coco_annotation_file = None  # Separate file for COCO format
         self.annotations_data = None
         self.annotation_dict = {}  # Initialize annotation lookup dict
         self.current_image_index = 0
@@ -58,10 +57,6 @@ class KeypointLabeler:
         # Progress tracking
         self.annotation_status = {}  # Track which images have annotations
         self.show_only_unannotated = False
-        
-        # Format mode (COCO vs Standard)
-        self.format_mode = "standard"  # "standard" or "coco"
-        self.default_visibility = 2  # Default visibility: 2=visible, 1=occluded, 0=not labeled
         
         # Visual settings
         self.show_skeleton = True
@@ -182,11 +177,11 @@ class KeypointLabeler:
         scrollbar.config(command=self.image_listbox.yview)
         
         # Keypoint controls
-        self.keypoint_frame = ttk.LabelFrame(left_panel, text="Keypoint Controls", padding="10")
-        self.keypoint_frame.pack(fill=tk.X, pady=(10, 0))
+        keypoint_frame = ttk.LabelFrame(left_panel, text="Keypoint Controls", padding="10")
+        keypoint_frame.pack(fill=tk.X, pady=(10, 0))
         
-        ttk.Label(self.keypoint_frame, text="Mode:").pack(anchor=tk.W, pady=(0, 5))
-        mode_button_frame = ttk.Frame(self.keypoint_frame)
+        ttk.Label(keypoint_frame, text="Mode:").pack(anchor=tk.W, pady=(0, 5))
+        mode_button_frame = ttk.Frame(keypoint_frame)
         mode_button_frame.pack(fill=tk.X, pady=(0, 10))
         
         self.edit_mode = tk.StringVar(value="move")
@@ -206,60 +201,27 @@ class KeypointLabeler:
         # Update button appearance based on mode
         self.update_mode_buttons()
         
-        # Format mode selector (COCO vs Standard)
-        format_frame = ttk.LabelFrame(self.keypoint_frame, text="Format Mode", padding="5")
-        format_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        self.format_mode_var = tk.StringVar(value="standard")
-        format_button_frame = ttk.Frame(format_frame)
-        format_button_frame.pack(fill=tk.X)
-        
-        ttk.Radiobutton(format_button_frame, text="Standard", 
-                       variable=self.format_mode_var, value="standard",
-                       command=self.on_format_mode_change).pack(side=tk.LEFT, expand=True)
-        ttk.Radiobutton(format_button_frame, text="COCO", 
-                       variable=self.format_mode_var, value="coco",
-                       command=self.on_format_mode_change).pack(side=tk.LEFT, expand=True)
-        
-        # Visibility controls (shown only in COCO mode)
-        self.visibility_frame = ttk.LabelFrame(self.keypoint_frame, text="Visibility (COCO)", padding="5")
-        self.visibility_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        visibility_button_frame = ttk.Frame(self.visibility_frame)
-        visibility_button_frame.pack(fill=tk.X)
-        
-        self.visibility_var = tk.IntVar(value=2)
-        ttk.Radiobutton(visibility_button_frame, text="Visible (2)", 
-                       variable=self.visibility_var, value=2).pack(side=tk.LEFT, expand=True)
-        ttk.Radiobutton(visibility_button_frame, text="Occluded (1)", 
-                       variable=self.visibility_var, value=1).pack(side=tk.LEFT, expand=True)
-        ttk.Radiobutton(visibility_button_frame, text="Not Labeled (0)", 
-                       variable=self.visibility_var, value=0).pack(side=tk.LEFT, expand=True)
-        
-        # Initially hide visibility controls
-        self.visibility_frame.pack_forget()
-        
         # Undo/Redo buttons
-        undo_redo_frame = ttk.Frame(self.keypoint_frame)
+        undo_redo_frame = ttk.Frame(keypoint_frame)
         undo_redo_frame.pack(fill=tk.X, pady=(0, 10))
         ttk.Button(undo_redo_frame, text="Undo (Ctrl+Z)", 
                   command=self.undo_action).pack(side=tk.LEFT, expand=True, padx=2)
         ttk.Button(undo_redo_frame, text="Redo (Ctrl+Y)", 
                   command=self.redo_action).pack(side=tk.LEFT, expand=True, padx=2)
         
-        ttk.Button(self.keypoint_frame, text="Clear All Keypoints", 
+        ttk.Button(keypoint_frame, text="Clear All Keypoints", 
                   command=self.clear_keypoints).pack(fill=tk.X, pady=(0, 5))
-        ttk.Button(self.keypoint_frame, text="Copy from Previous Frame (Ctrl+C)", 
+        ttk.Button(keypoint_frame, text="Copy from Previous Frame (Ctrl+C)", 
                   command=self.copy_from_previous_frame).pack(fill=tk.X, pady=(0, 5))
         
         # Batch operations
-        batch_frame = ttk.LabelFrame(self.keypoint_frame, text="Batch Operations", padding="5")
+        batch_frame = ttk.LabelFrame(keypoint_frame, text="Batch Operations", padding="5")
         batch_frame.pack(fill=tk.X, pady=(0, 10))
         ttk.Button(batch_frame, text="Copy to Next N Frames...", 
                   command=self.batch_copy_keypoints).pack(fill=tk.X, pady=2)
         
         # Visual controls
-        visual_frame = ttk.LabelFrame(self.keypoint_frame, text="Visual Settings", padding="5")
+        visual_frame = ttk.LabelFrame(keypoint_frame, text="Visual Settings", padding="5")
         visual_frame.pack(fill=tk.X, pady=(0, 10))
         
         self.skeleton_var = tk.BooleanVar(value=True)
@@ -284,7 +246,7 @@ class KeypointLabeler:
         self.size_label.pack(side=tk.LEFT)
         
         # Zoom controls
-        zoom_frame = ttk.Frame(self.keypoint_frame)
+        zoom_frame = ttk.Frame(keypoint_frame)
         zoom_frame.pack(fill=tk.X, pady=(10, 0))
         ttk.Button(zoom_frame, text="Zoom In", command=self.zoom_in).pack(side=tk.LEFT, expand=True, padx=2)
         ttk.Button(zoom_frame, text="Zoom Out", command=self.zoom_out).pack(side=tk.LEFT, expand=True, padx=2)
@@ -302,53 +264,6 @@ class KeypointLabeler:
         self.keypoint_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.keypoint_listbox.bind('<<ListboxSelect>>', self.on_keypoint_select)
         kp_scrollbar.config(command=self.keypoint_listbox.yview)
-        
-        # Visibility info panel (shown only in COCO mode)
-        self.visibility_info_frame = ttk.LabelFrame(left_panel, text="Visibility Info (COCO)", padding="10")
-        self.visibility_info_frame.pack(fill=tk.X, pady=(10, 0))
-        
-        # Visibility statistics
-        self.vis_stats_label = ttk.Label(self.visibility_info_frame, text="No keypoints", font=('Arial', 9))
-        self.vis_stats_label.pack(anchor=tk.W, pady=(0, 5))
-        
-        # Visibility breakdown
-        vis_breakdown_frame = ttk.Frame(self.visibility_info_frame)
-        vis_breakdown_frame.pack(fill=tk.X, pady=(0, 5))
-        
-        self.vis_visible_label = ttk.Label(vis_breakdown_frame, text="Visible (2): 0", foreground="green")
-        self.vis_visible_label.pack(side=tk.LEFT, padx=(0, 5))
-        
-        self.vis_occluded_label = ttk.Label(vis_breakdown_frame, text="Occluded (1): 0", foreground="orange")
-        self.vis_occluded_label.pack(side=tk.LEFT, padx=(0, 5))
-        
-        self.vis_not_labeled_label = ttk.Label(vis_breakdown_frame, text="Not Labeled (0): 0", foreground="gray")
-        self.vis_not_labeled_label.pack(side=tk.LEFT)
-        
-        # Selected keypoint visibility (if any selected)
-        self.selected_kp_vis_frame = ttk.Frame(self.visibility_info_frame)
-        self.selected_kp_vis_frame.pack(fill=tk.X, pady=(5, 0))
-        
-        self.selected_kp_label = ttk.Label(self.selected_kp_vis_frame, text="Selected: None", font=('Arial', 9, 'bold'))
-        self.selected_kp_label.pack(anchor=tk.W, pady=(0, 3))
-        
-        # Quick visibility change buttons for selected keypoint
-        self.quick_vis_frame = ttk.Frame(self.selected_kp_vis_frame)
-        self.quick_vis_frame.pack(fill=tk.X)
-        
-        self.quick_vis_btn_2 = ttk.Button(self.quick_vis_frame, text="Set Visible", width=10,
-                                         command=lambda: self.set_selected_keypoint_visibility(2))
-        self.quick_vis_btn_2.pack(side=tk.LEFT, padx=2, expand=True)
-        
-        self.quick_vis_btn_1 = ttk.Button(self.quick_vis_frame, text="Set Occluded", width=10,
-                                         command=lambda: self.set_selected_keypoint_visibility(1))
-        self.quick_vis_btn_1.pack(side=tk.LEFT, padx=2, expand=True)
-        
-        self.quick_vis_btn_0 = ttk.Button(self.quick_vis_frame, text="Not Labeled", width=10,
-                                         command=lambda: self.set_selected_keypoint_visibility(0))
-        self.quick_vis_btn_0.pack(side=tk.LEFT, padx=2, expand=True)
-        
-        # Initially hide visibility info panel
-        self.visibility_info_frame.pack_forget()
         
         # Right panel - canvas for image display
         right_panel = ttk.Frame(main_frame)
@@ -377,7 +292,6 @@ class KeypointLabeler:
         self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.canvas.bind("<B1-Motion>", self.on_canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
-        self.canvas.bind("<Button-3>", self.on_canvas_right_click)  # Right-click for visibility menu
         self.canvas.bind("<MouseWheel>", self.on_mousewheel)
         self.canvas.bind("<Control-MouseWheel>", self.on_mousewheel)
         self.canvas.bind("<Button-4>", self.on_mousewheel)
@@ -545,9 +459,6 @@ class KeypointLabeler:
                 with open(file, 'r') as f:
                     self.annotations_data = json.load(f)
                 self.annotation_file = file
-                # Auto-generate COCO file path
-                base_path = os.path.splitext(file)[0]
-                self.coco_annotation_file = base_path + "_coco.json"
                 self.annotation_label.config(text=os.path.basename(file))
                 self.update_status(f"Loaded annotations for {len(self.annotations_data.get('annotations', []))} images")
                 
@@ -724,8 +635,6 @@ class KeypointLabeler:
             self.redo_stack.clear()
             self.display_image()
             self.update_keypoint_list()
-            if self.format_mode == "coco":
-                self.update_visibility_info()
             self.update_image_index_label()
             self.update_progress()
             
@@ -795,35 +704,20 @@ class KeypointLabeler:
         # First, collect valid keypoint positions
         valid_keypoints = {}
         for idx, kp in enumerate(keypoints):
-            if kp is None:
-                continue
-            if not isinstance(kp, (list, tuple)) or len(kp) < 2:
+            if not kp or len(kp) < 2:
                 continue
                 
             try:
                 x, y = float(kp[0]), float(kp[1])
                 
-                # Skip invalid coordinates (allow 0,0 but check for valid numeric types)
-                # Only skip if coordinates are negative (0 is valid) or not numeric
-                if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+                # Skip invalid coordinates
+                if x < 0 or y < 0 or not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
                     continue
-                if x < 0 or y < 0:
-                    continue
-                
-                # Check if coordinates are within reasonable bounds (allow up to 10x image size for zoom)
-                # This prevents drawing keypoints that are clearly invalid
-                if self.current_image:
-                    max_x = self.current_image.width * 10
-                    max_y = self.current_image.height * 10
-                    if x > max_x or y > max_y:
-                        continue
                 
                 # Scale coordinates
                 display_x = x * self.scale_factor
                 display_y = y * self.scale_factor
-                # Store visibility if available (for COCO mode)
-                visibility = int(kp[2]) if len(kp) >= 3 else 2
-                valid_keypoints[idx] = (display_x, display_y, visibility)
+                valid_keypoints[idx] = (display_x, display_y)
             except (ValueError, TypeError, IndexError) as e:
                 # Skip invalid keypoint data
                 print(f"Warning: Invalid keypoint {idx}: {kp}, error: {e}")
@@ -834,8 +728,8 @@ class KeypointLabeler:
             for connection in self.skeleton:
                 idx1, idx2 = connection
                 if idx1 in valid_keypoints and idx2 in valid_keypoints:
-                    x1, y1 = valid_keypoints[idx1][0], valid_keypoints[idx1][1]
-                    x2, y2 = valid_keypoints[idx2][0], valid_keypoints[idx2][1]
+                    x1, y1 = valid_keypoints[idx1]
+                    x2, y2 = valid_keypoints[idx2]
                     
                     # Use a color based on the connection type
                     # Different colors for different body parts
@@ -859,67 +753,18 @@ class KeypointLabeler:
                     )
         
         # Draw keypoints (circles)
-        for idx, kp_data in valid_keypoints.items():
-            display_x, display_y = kp_data[0], kp_data[1]
-            visibility = kp_data[2] if len(kp_data) >= 3 else 2
-            
+        for idx, (display_x, display_y) in valid_keypoints.items():
             # Color
             color = self.keypoint_colors[idx % len(self.keypoint_colors)]
-            
-            # Adjust appearance based on visibility (COCO mode)
-            if self.format_mode == "coco":
-                if visibility == 0:  # Not labeled
-                    fill_color = '#888888'  # Gray
-                    outline_color = '#666666'
-                    outline_width = 1
-                    style = "dashed"
-                elif visibility == 1:  # Occluded
-                    fill_color = color
-                    outline_color = '#FF0000'  # Red outline
-                    outline_width = 2
-                    style = "solid"
-                else:  # Visible (2)
-                    fill_color = color
-                    outline_color = 'black'
-                    outline_width = 2
-                    style = "solid"
-            else:
-                fill_color = color
-                outline_color = 'black'
-                outline_width = 2
-                style = "solid"
             
             # Draw circle
             radius = self.keypoint_radius
             self.canvas.create_oval(
                 display_x - radius, display_y - radius,
                 display_x + radius, display_y + radius,
-                fill=fill_color, outline=outline_color, width=outline_width,
+                fill=color, outline='black', width=2,
                 tags=f"keypoint_{idx}"
             )
-            
-            # Add visibility indicator (small dot or ring for occluded/not labeled)
-            if self.format_mode == "coco" and visibility != 2:
-                if visibility == 1:  # Occluded - draw inner ring
-                    self.canvas.create_oval(
-                        display_x - radius * 0.6, display_y - radius * 0.6,
-                        display_x + radius * 0.6, display_y + radius * 0.6,
-                        outline='#FF0000', width=1,
-                        tags=f"keypoint_{idx}"
-                    )
-                elif visibility == 0:  # Not labeled - draw X
-                    self.canvas.create_line(
-                        display_x - radius * 0.7, display_y - radius * 0.7,
-                        display_x + radius * 0.7, display_y + radius * 0.7,
-                        fill='#666666', width=1,
-                        tags=f"keypoint_{idx}"
-                    )
-                    self.canvas.create_line(
-                        display_x - radius * 0.7, display_y + radius * 0.7,
-                        display_x + radius * 0.7, display_y - radius * 0.7,
-                        fill='#666666', width=1,
-                        tags=f"keypoint_{idx}"
-                    )
             
             # Draw label
             if self.show_keypoint_labels:
@@ -964,8 +809,6 @@ class KeypointLabeler:
         
         # Update display
         self.update_keypoint_list()
-        if self.format_mode == "coco":
-            self.update_visibility_info()
         self.display_image()
         self.update_status("Undo: Restored previous keypoint state")
     
@@ -985,61 +828,8 @@ class KeypointLabeler:
         
         # Update display
         self.update_keypoint_list()
-        if self.format_mode == "coco":
-            self.update_visibility_info()
         self.display_image()
         self.update_status("Redo: Restored next keypoint state")
-    
-    def on_format_mode_change(self):
-        """Handle format mode change (COCO vs Standard)"""
-        old_mode = self.format_mode
-        self.format_mode = self.format_mode_var.get()
-        
-        if self.format_mode == "coco":
-            # Show visibility frame (it's already a child of keypoint_frame)
-            self.visibility_frame.pack(fill=tk.X, pady=(0, 10))
-            self.visibility_info_frame.pack(fill=tk.X, pady=(10, 0))
-            
-            # When switching from standard to COCO, set all existing keypoints to visible (2)
-            if old_mode == "standard" and self.current_annotation:
-                keypoints = self.current_annotation.get('keypoints', [])
-                updated = False
-                for idx, kp in enumerate(keypoints):
-                    if kp is not None and isinstance(kp, (list, tuple)) and len(kp) >= 2:
-                        # If keypoint doesn't have visibility, add it as visible (2)
-                        if len(kp) < 3:
-                            keypoints[idx] = [kp[0], kp[1], 2]  # Set to visible
-                            updated = True
-                        # If visibility exists but is invalid, set to visible
-                        elif len(kp) >= 3:
-                            try:
-                                vis = int(kp[2])
-                                if vis not in [0, 1, 2]:
-                                    keypoints[idx] = [kp[0], kp[1], 2]
-                                    updated = True
-                            except (ValueError, TypeError):
-                                keypoints[idx] = [kp[0], kp[1], 2]
-                                updated = True
-                
-                if updated:
-                    self.unsaved_changes = True
-                    self.update_status("COCO mode: All keypoints set to visible (2)")
-            
-            # Auto-generate COCO file path if annotation file exists
-            if self.annotation_file and not self.coco_annotation_file:
-                base_path = os.path.splitext(self.annotation_file)[0]
-                self.coco_annotation_file = base_path + "_coco.json"
-            
-            self.update_status("COCO mode: Keypoints will include visibility")
-        else:
-            self.visibility_frame.pack_forget()
-            self.visibility_info_frame.pack_forget()
-            self.update_status("Standard mode: Keypoints without visibility")
-        
-        # Update display to show visibility if in COCO mode
-        self.update_keypoint_list()
-        self.update_visibility_info()
-        self.display_image(preserve_zoom=True)
     
     def set_mode(self, mode):
         """Set edit mode and update button appearance"""
@@ -1105,18 +895,9 @@ class KeypointLabeler:
             # Add new keypoint
             if 'keypoints' not in self.current_annotation:
                 self.current_annotation['keypoints'] = []
-            
-            # Include visibility if in COCO mode
-            if self.format_mode == "coco":
-                visibility = self.visibility_var.get()
-                self.current_annotation['keypoints'].append([img_x, img_y, visibility])
-            else:
-                self.current_annotation['keypoints'].append([img_x, img_y])
-            
+            self.current_annotation['keypoints'].append([img_x, img_y])
             self.unsaved_changes = True
             self.update_keypoint_list()
-            if self.format_mode == "coco":
-                self.update_visibility_info()
             self.update_progress()
             self.display_image()
             
@@ -1141,8 +922,6 @@ class KeypointLabeler:
                 self.selected_keypoint = None
                 self.unsaved_changes = True
                 self.update_keypoint_list()
-                if self.format_mode == "coco":
-                    self.update_visibility_info()
                 self.update_progress()
                 self.display_image()
                 
@@ -1174,104 +953,6 @@ class KeypointLabeler:
         if hasattr(self, '_drag_state_saved'):
             delattr(self, '_drag_state_saved')
         self.selected_keypoint = None
-    
-    def on_canvas_right_click(self, event):
-        """Handle right-click to change keypoint visibility (COCO mode only)"""
-        if self.format_mode != "coco":
-            return
-        
-        if not self.current_annotation or self.scale_factor <= 0:
-            return
-        
-        # Get canvas coordinates
-        canvas_x = self.canvas.canvasx(event.x)
-        canvas_y = self.canvas.canvasy(event.y)
-        
-        # Convert to image coordinates
-        img_x = canvas_x / self.scale_factor
-        img_y = canvas_y / self.scale_factor
-        
-        # Find nearest keypoint
-        min_dist = float('inf')
-        nearest_idx = None
-        keypoints = self.current_annotation.get('keypoints', [])
-        
-        for idx, kp in enumerate(keypoints):
-            if kp is None or not isinstance(kp, (list, tuple)) or len(kp) < 2:
-                continue
-            try:
-                kp_x, kp_y = float(kp[0]), float(kp[1])
-                dist = math.sqrt((img_x - kp_x)**2 + (img_y - kp_y)**2)
-                if dist < min_dist and dist < 30:  # 30 pixel threshold
-                    min_dist = dist
-                    nearest_idx = idx
-            except (ValueError, TypeError):
-                continue
-        
-        if nearest_idx is not None:
-            # Show context menu to change visibility
-            self.show_visibility_menu(event.x_root, event.y_root, nearest_idx)
-    
-    def show_visibility_menu(self, x, y, keypoint_idx):
-        """Show context menu to change keypoint visibility"""
-        menu = tk.Menu(self.root, tearoff=0)
-        
-        # Get current visibility
-        keypoints = self.current_annotation.get('keypoints', [])
-        if keypoint_idx < len(keypoints):
-            kp = keypoints[keypoint_idx]
-            current_vis = int(kp[2]) if len(kp) >= 3 else 2
-        else:
-            current_vis = 2
-        
-        # Add menu items
-        menu.add_command(
-            label=f"Visible (2) {'✓' if current_vis == 2 else ''}",
-            command=lambda: self.set_keypoint_visibility(keypoint_idx, 2)
-        )
-        menu.add_command(
-            label=f"Occluded (1) {'✓' if current_vis == 1 else ''}",
-            command=lambda: self.set_keypoint_visibility(keypoint_idx, 1)
-        )
-        menu.add_command(
-            label=f"Not Labeled (0) {'✓' if current_vis == 0 else ''}",
-            command=lambda: self.set_keypoint_visibility(keypoint_idx, 0)
-        )
-        
-        try:
-            menu.tk_popup(x, y)
-        finally:
-            menu.grab_release()
-    
-    def set_keypoint_visibility(self, keypoint_idx, visibility):
-        """Set visibility for a specific keypoint"""
-        if not self.current_annotation:
-            return
-        
-        keypoints = self.current_annotation.get('keypoints', [])
-        if keypoint_idx >= len(keypoints):
-            return
-        
-        # Save state for undo
-        self.save_state()
-        
-        kp = keypoints[keypoint_idx]
-        if kp is None or not isinstance(kp, (list, tuple)) or len(kp) < 2:
-            return
-        
-        # Update visibility
-        if len(kp) >= 3:
-            keypoints[keypoint_idx] = [kp[0], kp[1], visibility]
-        else:
-            keypoints[keypoint_idx] = [kp[0], kp[1], visibility]
-        
-        self.unsaved_changes = True
-        self.update_keypoint_list()
-        self.update_visibility_info()
-        self.display_image(preserve_zoom=True)
-        
-        vis_text = {0: "Not Labeled", 1: "Occluded", 2: "Visible"}.get(visibility, "Unknown")
-        self.update_status(f"Set keypoint {keypoint_idx} visibility to {visibility} ({vis_text})")
         
     def on_mousewheel(self, event):
         # Zoom functionality (Windows uses delta, Linux uses num)
@@ -1399,138 +1080,25 @@ class KeypointLabeler:
         if selection:
             idx = selection[0]
             keypoints = self.current_annotation.get('keypoints', [])
-            
-            # Find the actual keypoint index (accounting for filtered None values)
-            valid_indices = []
-            for i, kp in enumerate(keypoints):
-                if kp is not None and isinstance(kp, (list, tuple)) and len(kp) >= 2:
-                    valid_indices.append(i)
-            
-            if idx < len(valid_indices):
-                actual_idx = valid_indices[idx]
-                kp = keypoints[actual_idx]
+            if idx < len(keypoints):
+                kp = keypoints[idx]
                 # Highlight the keypoint
                 self.canvas.delete("highlight")
-                if kp is not None and isinstance(kp, (list, tuple)) and len(kp) >= 2:
+                if len(kp) >= 2:
                     x, y = kp[0] * self.scale_factor, kp[1] * self.scale_factor
                     self.canvas.create_oval(
                         x - 15, y - 15, x + 15, y + 15,
                         outline='yellow', width=3, tags="highlight"
                     )
-        
-        # Update visibility info when selection changes
-        if self.format_mode == "coco":
-            self.update_visibility_info()
                     
     def update_keypoint_list(self):
         self.keypoint_listbox.delete(0, tk.END)
         if self.current_annotation:
             keypoints = self.current_annotation.get('keypoints', [])
             for idx, kp in enumerate(keypoints):
-                if kp is None or not isinstance(kp, (list, tuple)) or len(kp) < 2:
-                    continue
-                label = self.keypoint_names[idx % len(self.keypoint_names)]
-                if self.format_mode == "coco" and len(kp) >= 3:
-                    visibility = int(kp[2])
-                    vis_text = {0: "Not Labeled", 1: "Occluded", 2: "Visible"}.get(visibility, "Unknown")
-                    self.keypoint_listbox.insert(tk.END, f"{label}: ({kp[0]:.1f}, {kp[1]:.1f}) [V:{visibility} {vis_text}]")
-                else:
+                if len(kp) >= 2:
+                    label = self.keypoint_names[idx % len(self.keypoint_names)]
                     self.keypoint_listbox.insert(tk.END, f"{label}: ({kp[0]:.1f}, {kp[1]:.1f})")
-        
-        # Update visibility info if in COCO mode
-        if self.format_mode == "coco":
-            self.update_visibility_info()
-    
-    def update_visibility_info(self):
-        """Update visibility information panel"""
-        if self.format_mode != "coco" or not self.current_annotation:
-            return
-        
-        keypoints = self.current_annotation.get('keypoints', [])
-        valid_keypoints = [kp for kp in keypoints if kp is not None and isinstance(kp, (list, tuple)) and len(kp) >= 2]
-        
-        if not valid_keypoints:
-            self.vis_stats_label.config(text="No keypoints")
-            self.vis_visible_label.config(text="Visible (2): 0")
-            self.vis_occluded_label.config(text="Occluded (1): 0")
-            self.vis_not_labeled_label.config(text="Not Labeled (0): 0")
-            self.selected_kp_label.config(text="Selected: None")
-            return
-        
-        # Count visibility statistics
-        visible_count = 0
-        occluded_count = 0
-        not_labeled_count = 0
-        
-        for kp in valid_keypoints:
-            if len(kp) >= 3:
-                vis = int(kp[2])
-                if vis == 2:
-                    visible_count += 1
-                elif vis == 1:
-                    occluded_count += 1
-                elif vis == 0:
-                    not_labeled_count += 1
-            else:
-                # No visibility info, count as visible (default)
-                visible_count += 1
-        
-        total = len(valid_keypoints)
-        self.vis_stats_label.config(text=f"Total: {total} keypoints")
-        self.vis_visible_label.config(text=f"Visible (2): {visible_count}")
-        self.vis_occluded_label.config(text=f"Occluded (1): {occluded_count}")
-        self.vis_not_labeled_label.config(text=f"Not Labeled (0): {not_labeled_count}")
-        
-        # Update selected keypoint info
-        selection = self.keypoint_listbox.curselection()
-        if selection:
-            idx = selection[0]
-            # Find the actual keypoint index (accounting for filtered None values)
-            valid_indices = []
-            for i, kp in enumerate(keypoints):
-                if kp is not None and isinstance(kp, (list, tuple)) and len(kp) >= 2:
-                    valid_indices.append(i)
-            
-            if idx < len(valid_indices):
-                actual_idx = valid_indices[idx]
-                kp = keypoints[actual_idx]
-                label = self.keypoint_names[actual_idx % len(self.keypoint_names)]
-                
-                if len(kp) >= 3:
-                    visibility = int(kp[2])
-                    vis_text = {0: "Not Labeled", 1: "Occluded", 2: "Visible"}.get(visibility, "Unknown")
-                    self.selected_kp_label.config(text=f"Selected: {label} - {vis_text} ({visibility})")
-                else:
-                    self.selected_kp_label.config(text=f"Selected: {label} - No visibility")
-            else:
-                self.selected_kp_label.config(text="Selected: None")
-        else:
-            self.selected_kp_label.config(text="Selected: None")
-    
-    def set_selected_keypoint_visibility(self, visibility):
-        """Set visibility for the currently selected keypoint in the list"""
-        if not self.current_annotation or self.format_mode != "coco":
-            return
-        
-        selection = self.keypoint_listbox.curselection()
-        if not selection:
-            messagebox.showinfo("Info", "Please select a keypoint from the list first")
-            return
-        
-        idx = selection[0]
-        keypoints = self.current_annotation.get('keypoints', [])
-        
-        # Find the actual keypoint index (accounting for filtered None values)
-        valid_indices = []
-        for i, kp in enumerate(keypoints):
-            if kp is not None and isinstance(kp, (list, tuple)) and len(kp) >= 2:
-                valid_indices.append(i)
-        
-        if idx >= len(valid_indices):
-            return
-        
-        actual_idx = valid_indices[idx]
-        self.set_keypoint_visibility(actual_idx, visibility)
                     
     def clear_keypoints(self):
         if self.current_annotation:
@@ -1539,8 +1107,6 @@ class KeypointLabeler:
             self.current_annotation['keypoints'] = []
             self.unsaved_changes = True
             self.update_keypoint_list()
-            if self.format_mode == "coco":
-                self.update_visibility_info()
             self.update_progress()
             self.display_image()
     
@@ -1558,45 +1124,29 @@ class KeypointLabeler:
             messagebox.showwarning("Warning", "No annotation data loaded")
             return
         
-        # Save state before copying (for undo)
-        self.save_state()
-        
         # Get previous image path
         prev_image_path = self.image_list[self.current_image_index - 1]
         prev_full_path = os.path.join(self.image_folder, prev_image_path)
         prev_rel_path = self.get_relative_path(prev_full_path, self.image_folder)
         
-        # Find previous annotation using same matching logic as load_current_image
+        # Find previous annotation using same matching logic
         prev_annotation = None
-        prev_annotation_match_path = self.get_annotation_match_path(prev_full_path, self.image_folder)
         
-        # Strategy 1: Try exact match with annotation match path
-        if prev_annotation_match_path and prev_annotation_match_path in self.annotation_dict:
-            prev_annotation = self.annotation_dict[prev_annotation_match_path]
-        
-        # Strategy 2: Try exact match with normalized relative path
-        if not prev_annotation and prev_rel_path and prev_rel_path in self.annotation_dict:
+        # Try exact match
+        if prev_rel_path and prev_rel_path in self.annotation_dict:
             prev_annotation = self.annotation_dict[prev_rel_path]
-        
-        # Strategy 3: Try matching by filename
-        if not prev_annotation:
+        else:
+            # Try filename match
             filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
             if filename in self.annotation_dict:
                 prev_annotation = self.annotation_dict[filename]
-        
-        # Strategy 4: Try path matching with annotation_match_path
-        if not prev_annotation and prev_annotation_match_path:
-            for ann_path, ann in self.annotation_dict.items():
-                if self.match_annotation_path(prev_annotation_match_path, ann_path):
-                    prev_annotation = ann
-                    break
-        
-        # Strategy 5: Try path matching with prev_rel_path as fallback
-        if not prev_annotation and prev_rel_path:
-            for ann_path, ann in self.annotation_dict.items():
-                if self.match_annotation_path(prev_rel_path, ann_path):
-                    prev_annotation = ann
-                    break
+            else:
+                # Try path matching
+                if prev_rel_path:
+                    for ann_path, ann in self.annotation_dict.items():
+                        if self.match_annotation_path(prev_rel_path, ann_path):
+                            prev_annotation = ann
+                            break
         
         if not prev_annotation:
             messagebox.showwarning("Warning", "No annotation found for previous image")
@@ -1608,56 +1158,15 @@ class KeypointLabeler:
             messagebox.showinfo("Info", "Previous image has no keypoints to copy")
             return
         
-        # Copy keypoints (create a deep copy) - preserve the exact structure
-        # This ensures all keypoints, including None values, are preserved
-        copied_keypoints = copy.deepcopy(prev_keypoints)
-        
-        # Ensure we have a proper list structure
-        if not isinstance(copied_keypoints, list):
-            copied_keypoints = list(copied_keypoints) if copied_keypoints else []
-        
-        # Validate and clean up the copied keypoints
-        # Keep the structure but ensure each element is either None or a valid [x, y] list
-        cleaned_keypoints = []
-        for kp in copied_keypoints:
-            if kp is None:
-                cleaned_keypoints.append(None)
-            elif isinstance(kp, (list, tuple)) and len(kp) >= 2:
-                try:
-                    # Validate coordinates
-                    x, y = float(kp[0]), float(kp[1])
-                    if isinstance(x, (int, float)) and isinstance(y, (int, float)):
-                        # Preserve visibility if exists, otherwise add default based on mode
-                        if len(kp) >= 3:
-                            # Keep existing visibility
-                            cleaned_keypoints.append([x, y, int(kp[2])])
-                        elif self.format_mode == "coco":
-                            # Add default visibility in COCO mode
-                            cleaned_keypoints.append([x, y, self.default_visibility])
-                        else:
-                            # Standard mode, no visibility
-                            cleaned_keypoints.append([x, y])
-                    else:
-                        cleaned_keypoints.append(None)
-                except (ValueError, TypeError):
-                    cleaned_keypoints.append(None)
-            else:
-                cleaned_keypoints.append(None)
-        
-        # Store the cleaned keypoints
-        self.current_annotation['keypoints'] = cleaned_keypoints
+        # Copy keypoints (create a deep copy)
+        self.current_annotation['keypoints'] = copy.deepcopy(prev_keypoints)
         self.unsaved_changes = True
         
         # Update display
         self.update_keypoint_list()
-        if self.format_mode == "coco":
-            self.update_visibility_info()
         self.update_progress()
         self.display_image()
-        
-        # Count valid keypoints copied
-        valid_count = sum(1 for kp in copied_keypoints if kp and len(kp) >= 2)
-        self.update_status(f"Copied {valid_count} keypoints from previous frame (total: {len(copied_keypoints)})")
+        self.update_status(f"Copied {len(prev_keypoints)} keypoints from previous frame")
         
         # Restore focus to canvas so keyboard shortcuts continue to work
         self.canvas.focus_set()
@@ -1692,28 +1201,19 @@ class KeypointLabeler:
         if not self.annotations_data:
             messagebox.showwarning("Warning", "No annotations to save")
             return
-        
-        # Determine which file(s) to save based on format mode
-        if self.format_mode == "coco":
-            # COCO mode: save to BOTH files
-            # 1. Check if standard file exists
-            if not self.annotation_file:
-                messagebox.showwarning("Warning", "No standard annotation file loaded. Please import annotations first.")
-                return
             
-            # 2. Determine COCO file path
-            if self.coco_annotation_file:
-                coco_file_path = self.coco_annotation_file
-            elif self.annotation_file:
-                # Generate COCO file path based on standard file
-                base_path = os.path.splitext(self.annotation_file)[0]
-                coco_file_path = base_path + "_coco.json"
-                self.coco_annotation_file = coco_file_path
-            else:
-                messagebox.showwarning("Warning", "No standard annotation file loaded.")
-                return
+        if self.annotation_file:
+            # Save to existing file
+            file_path = self.annotation_file
+        else:
+            # Ask for new file
+            file_path = filedialog.asksaveasfilename(
+                title="Save Annotations",
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
+            )
             
-            # Save to both files
+        if file_path:
             try:
                 # Update info
                 if 'info' in self.annotations_data:
@@ -1722,74 +1222,21 @@ class KeypointLabeler:
                         max_kp = max(len(ann.get('keypoints', [])) for ann in self.annotations_data['annotations'])
                         self.annotations_data['info']['num_keypoints'] = max_kp
                 
-                # Save to standard file (with visibility preserved in data structure)
-                with open(self.annotation_file, 'w') as f:
+                with open(file_path, 'w') as f:
                     json.dump(self.annotations_data, f, indent=2)
-                
-                # Save to COCO file (same data, but explicitly for COCO format)
-                with open(coco_file_path, 'w') as f:
-                    json.dump(self.annotations_data, f, indent=2)
-                
-                self.coco_annotation_file = coco_file_path
-                
-                # Update label to show both files
-                standard_name = os.path.basename(self.annotation_file)
-                coco_name = os.path.basename(coco_file_path)
-                self.annotation_label.config(text=f"{standard_name} | COCO: {coco_name}")
-                
+                    
+                self.annotation_file = file_path
+                self.annotation_label.config(text=os.path.basename(file_path))
                 self.unsaved_changes = False
                 import time
                 self.last_save_time = time.time()
                 self.save_indicator.config(text="✓ Saved", foreground="green")
                 self.root.after(2000, lambda: self.save_indicator.config(text=""))
-                
-                self.update_status(f"Saved to both files: {standard_name} and {coco_name}")
+                self.update_status(f"Saved annotations to {file_path}")
                 self.update_progress()
-                messagebox.showinfo("Success", f"Saved to both files:\nStandard: {standard_name}\nCOCO: {coco_name}")
+                messagebox.showinfo("Success", "Annotations saved successfully!")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save annotations: {str(e)}")
-        
-        else:
-            # Standard mode: save to original annotation file only
-            if self.annotation_file:
-                file_path = self.annotation_file
-            else:
-                # Ask for new file
-                file_path = filedialog.asksaveasfilename(
-                    title="Save Annotations",
-                    defaultextension=".json",
-                    filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-                )
-                if not file_path:
-                    return  # User cancelled
-                self.annotation_file = file_path
-            
-            if file_path:
-                try:
-                    # Update info
-                    if 'info' in self.annotations_data:
-                        self.annotations_data['info']['num_images'] = len(self.annotations_data['annotations'])
-                        if self.annotations_data['annotations']:
-                            max_kp = max(len(ann.get('keypoints', [])) for ann in self.annotations_data['annotations'])
-                            self.annotations_data['info']['num_keypoints'] = max_kp
-                    
-                    with open(file_path, 'w') as f:
-                        json.dump(self.annotations_data, f, indent=2)
-                    
-                    self.annotation_file = file_path
-                    self.annotation_label.config(text=os.path.basename(file_path))
-                    
-                    self.unsaved_changes = False
-                    import time
-                    self.last_save_time = time.time()
-                    self.save_indicator.config(text="✓ Saved", foreground="green")
-                    self.root.after(2000, lambda: self.save_indicator.config(text=""))
-                    
-                    self.update_status(f"Saved annotations to {file_path}")
-                    self.update_progress()
-                    messagebox.showinfo("Success", "Standard annotations saved successfully!")
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save annotations: {str(e)}")
                 
     def update_path_display(self, image_full_path, annotation_path):
         """Update the path display label with full paths"""
@@ -2072,44 +1519,26 @@ class KeypointLabeler:
     # ========== Auto-save functionality ==========
     def start_auto_save(self):
         """Start the auto-save timer"""
-        if self.auto_save_enabled:
-            # Check if we have a file to save to (either standard or COCO)
-            has_file = (self.format_mode == "coco" and self.coco_annotation_file) or \
-                       (self.format_mode == "standard" and self.annotation_file)
-            if has_file:
-                self.check_auto_save()
-                self.auto_save_job = self.root.after(self.auto_save_interval * 1000, self.start_auto_save)
+        if self.auto_save_enabled and self.annotation_file:
+            self.check_auto_save()
+            self.auto_save_job = self.root.after(self.auto_save_interval * 1000, self.start_auto_save)
     
     def check_auto_save(self):
         """Check if auto-save is needed and perform it"""
         import time
         current_time = time.time()
         
-        # Check if we have a file to save to
-        has_file = (self.format_mode == "coco" and self.coco_annotation_file) or \
-                   (self.format_mode == "standard" and self.annotation_file)
-        
-        if self.unsaved_changes and has_file:
+        if self.unsaved_changes and self.annotation_file:
             if current_time - self.last_save_time >= self.auto_save_interval:
                 self.auto_save()
     
     def auto_save(self):
         """Perform auto-save without user interaction"""
-        if not self.annotations_data:
+        if not self.annotations_data or not self.annotation_file:
             return
         
         try:
-            # Save to appropriate file based on mode
-            if self.format_mode == "coco":
-                if not self.coco_annotation_file:
-                    return  # Can't auto-save if COCO file not set
-                file_path = self.coco_annotation_file
-            else:
-                if not self.annotation_file:
-                    return  # Can't auto-save if standard file not set
-                file_path = self.annotation_file
-            
-            with open(file_path, 'w') as f:
+            with open(self.annotation_file, 'w') as f:
                 json.dump(self.annotations_data, f, indent=2)
             self.unsaved_changes = False
             import time
