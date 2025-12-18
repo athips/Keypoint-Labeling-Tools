@@ -261,7 +261,7 @@ class DualKeypointLabeler:
         
         # Fast navigation buttons - icon only, smaller
         fast_nav_frame = tk.Frame(nav_frame, bg='#FFFFFF')
-        fast_nav_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+        fast_nav_frame.pack(fill=tk.X, padx=10, pady=(0, 4))
         
         fast_btn_style = {
             'font': ('Segoe UI', 10),
@@ -280,22 +280,44 @@ class DualKeypointLabeler:
         first_btn = tk.Button(fast_nav_frame, text="◄◄", 
                              command=lambda: self.jump_to_image(0),
                              **fast_btn_style)
-        first_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=2)
+        first_btn.pack(side=tk.LEFT, padx=1, ipady=2)
         
         prev_fast_btn = tk.Button(fast_nav_frame, text="◄", 
                                  command=self.previous_image,
                                  **fast_btn_style)
-        prev_fast_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=2)
+        prev_fast_btn.pack(side=tk.LEFT, padx=1, ipady=2)
         
         next_fast_btn = tk.Button(fast_nav_frame, text="►", 
                                  command=self.next_image,
                                  **fast_btn_style)
-        next_fast_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=2)
+        next_fast_btn.pack(side=tk.LEFT, padx=1, ipady=2)
         
         last_btn = tk.Button(fast_nav_frame, text="►►", 
                             command=lambda: self.jump_to_image(-1),
                             **fast_btn_style)
-        last_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=2)
+        last_btn.pack(side=tk.LEFT, padx=1, ipady=2)
+        
+        # Reset zoom button - separate row for better visibility
+        zoom_frame = tk.Frame(nav_frame, bg='#FFFFFF')
+        zoom_frame.pack(fill=tk.X, padx=10, pady=(4, 8))
+        
+        reset_zoom_btn_style = {
+            'font': ('Segoe UI', 9),
+            'relief': tk.RAISED,
+            'cursor': 'hand2',
+            'padx': 12,
+            'pady': 6,
+            'bd': 1,
+            'bg': '#F8F9FA',
+            'fg': '#212529',
+            'activebackground': '#E9ECEF',
+            'activeforeground': '#212529'
+        }
+        
+        reset_zoom_btn = tk.Button(zoom_frame, text="Reset Zoom", 
+                                  command=self.reset_zoom,
+                                  **reset_zoom_btn_style)
+        reset_zoom_btn.pack(fill=tk.X, ipady=4)
         
         # Index and progress info
         info_frame = tk.Frame(nav_frame, bg='#F8F9FA')
@@ -1682,6 +1704,17 @@ Out of Frame: 사진 영역 밖"""
                 self.zoom_modes[side] = False
             
             self.display_image(side)
+    
+    def reset_zoom(self):
+        """Reset zoom to fit-to-window for active side"""
+        side = self.active_side
+        if not self.current_images[side]:
+            return
+        
+        # Reset to base scale factor
+        self.scale_factors[side] = self.base_scale_factors[side]
+        self.zoom_modes[side] = False
+        self.display_image(side, force=True)
     
     def jump_to_image(self, index):
         """Jump to a specific image index (0 for first, -1 for last)"""
