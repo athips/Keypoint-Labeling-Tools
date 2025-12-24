@@ -231,115 +231,93 @@ class DualKeypointLabeler:
         nav_frame = tk.Frame(sidebar_scroll, bg='#FFFFFF', relief=tk.FLAT, bd=1)
         nav_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
         
-        # Professional button style
-        # Navigation buttons - compact, same line with icons
-        nav_btn_row = tk.Frame(nav_frame, bg='#FFFFFF')
-        nav_btn_row.pack(fill=tk.X, padx=10, pady=(10, 6))
+        # Simple, clean navigation buttons
+        nav_container = tk.Frame(nav_frame, bg='#FFFFFF')
+        nav_container.pack(fill=tk.X, padx=10, pady=10)
         
+        # Clean button style - readable size
         nav_btn_style = {
-            'font': ('Segoe UI', 9),
+            'font': ('Segoe UI', 10),
             'relief': tk.FLAT,
             'cursor': 'hand2',
-            'padx': 8,
-            'pady': 6,
+            'padx': 12,
+            'pady': 8,
             'bd': 0,
-            'bg': '#212529',
+            'bg': '#007BFF',
             'fg': '#FFFFFF',
-            'activebackground': '#495057',
+            'activebackground': '#0056B3',
             'activeforeground': '#FFFFFF'
         }
         
-        prev_btn = tk.Button(nav_btn_row, text="◄ Prev", 
+        # Simple two-button layout: Previous and Next
+        nav_btn_row = tk.Frame(nav_container, bg='#FFFFFF')
+        nav_btn_row.pack(fill=tk.X, pady=(0, 6))
+        
+        prev_btn = tk.Button(nav_btn_row, text="◄ Previous", 
                             command=self.previous_image,
                             **nav_btn_style)
-        prev_btn.pack(side=tk.LEFT, expand=True, padx=2, ipady=4)
+        prev_btn.pack(side=tk.LEFT, expand=True, padx=2, ipady=6)
         
         next_btn = tk.Button(nav_btn_row, text="Next ►", 
                             command=self.next_image,
                             **nav_btn_style)
-        next_btn.pack(side=tk.LEFT, expand=True, padx=2, ipady=4)
+        next_btn.pack(side=tk.LEFT, expand=True, padx=2, ipady=6)
         
-        # Fast navigation buttons - icon only, smaller
-        fast_nav_frame = tk.Frame(nav_frame, bg='#FFFFFF')
-        fast_nav_frame.pack(fill=tk.X, padx=10, pady=(0, 4))
+        # Quick navigation and zoom row
+        quick_row = tk.Frame(nav_container, bg='#FFFFFF')
+        quick_row.pack(fill=tk.X, pady=(0, 0))
         
-        fast_btn_style = {
-            'font': ('Segoe UI', 10),
-            'relief': tk.FLAT,
-            'cursor': 'hand2',
-            'padx': 6,
-            'pady': 4,
-            'bd': 0,
-            'bg': '#E9ECEF',
-            'fg': '#212529',
-            'activebackground': '#DEE2E6',
-            'activeforeground': '#212529',
-            'width': 3
-        }
-        
-        first_btn = tk.Button(fast_nav_frame, text="◄◄", 
+        first_btn = tk.Button(quick_row, text="First", 
                              command=lambda: self.jump_to_image(0),
-                             **fast_btn_style)
-        first_btn.pack(side=tk.LEFT, padx=1, ipady=2)
+                             font=('Segoe UI', 9),
+                             relief=tk.FLAT,
+                             cursor='hand2',
+                             padx=8,
+                             pady=6,
+                             bd=0,
+                             bg='#6C757D',
+                             fg='#FFFFFF',
+                             activebackground='#5A6268',
+                             activeforeground='#FFFFFF')
+        first_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=4)
         
-        prev_fast_btn = tk.Button(fast_nav_frame, text="◄", 
-                                 command=self.previous_image,
-                                 **fast_btn_style)
-        prev_fast_btn.pack(side=tk.LEFT, padx=1, ipady=2)
-        
-        next_fast_btn = tk.Button(fast_nav_frame, text="►", 
-                                 command=self.next_image,
-                                 **fast_btn_style)
-        next_fast_btn.pack(side=tk.LEFT, padx=1, ipady=2)
-        
-        last_btn = tk.Button(fast_nav_frame, text="►►", 
+        last_btn = tk.Button(quick_row, text="Last", 
                             command=lambda: self.jump_to_image(-1),
-                            **fast_btn_style)
-        last_btn.pack(side=tk.LEFT, padx=1, ipady=2)
+                            font=('Segoe UI', 9),
+                            relief=tk.FLAT,
+                            cursor='hand2',
+                            padx=8,
+                            pady=6,
+                            bd=0,
+                            bg='#6C757D',
+                            fg='#FFFFFF',
+                            activebackground='#5A6268',
+                            activeforeground='#FFFFFF')
+        last_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=4)
         
-        # Reset zoom button - separate row for better visibility
-        zoom_frame = tk.Frame(nav_frame, bg='#FFFFFF')
-        zoom_frame.pack(fill=tk.X, padx=10, pady=(4, 8))
+        zoom_btn = tk.Button(quick_row, text="Reset Zoom", 
+                            command=self.reset_zoom,
+                            font=('Segoe UI', 9),
+                            relief=tk.FLAT,
+                            cursor='hand2',
+                            padx=8,
+                            pady=6,
+                            bd=0,
+                            bg='#FFC107',
+                            fg='#212529',
+                            activebackground='#E0A800',
+                            activeforeground='#212529')
+        zoom_btn.pack(side=tk.LEFT, expand=True, padx=1, ipady=4)
         
-        reset_zoom_btn_style = {
-            'font': ('Segoe UI', 9),
-            'relief': tk.RAISED,
-            'cursor': 'hand2',
-            'padx': 12,
-            'pady': 6,
-            'bd': 1,
-            'bg': '#F8F9FA',
-            'fg': '#212529',
-            'activebackground': '#E9ECEF',
-            'activeforeground': '#212529'
-        }
-        
-        reset_zoom_btn = tk.Button(zoom_frame, text="Reset Zoom", 
-                                  command=self.reset_zoom,
-                                  **reset_zoom_btn_style)
-        reset_zoom_btn.pack(fill=tk.X, ipady=4)
-        
-        # Index and progress info
-        info_frame = tk.Frame(nav_frame, bg='#F8F9FA')
-        info_frame.pack(fill=tk.X, padx=12, pady=(0, 12))
-        
+        # Initialize labels (will be updated elsewhere, not shown in navigation)
         self.image_index_labels = {
-            "left": tk.Label(info_frame, text="Left: 0/0", 
-                            font=('Segoe UI', 8), bg='#F8F9FA', fg='#6C757D', anchor='w'),
-            "right": tk.Label(info_frame, text="Right: 0/0", 
-                             font=('Segoe UI', 8), bg='#F8F9FA', fg='#6C757D', anchor='w')
+            "left": tk.Label(nav_frame, text="", font=('Segoe UI', 1), bg='#FFFFFF'),
+            "right": tk.Label(nav_frame, text="", font=('Segoe UI', 1), bg='#FFFFFF')
         }
-        self.image_index_labels["left"].pack(fill=tk.X, pady=4)
-        self.image_index_labels["right"].pack(fill=tk.X, pady=2)
-        
         self.progress_labels = {
-            "left": tk.Label(info_frame, text="Progress: 0/0 (0%)", 
-                            font=('Segoe UI', 8), bg='#F8F9FA', fg='#6C757D', anchor='w'),
-            "right": tk.Label(info_frame, text="Progress: 0/0 (0%)", 
-                             font=('Segoe UI', 8), bg='#F8F9FA', fg='#6C757D', anchor='w')
+            "left": tk.Label(nav_frame, text="", font=('Segoe UI', 1), bg='#FFFFFF'),
+            "right": tk.Label(nav_frame, text="", font=('Segoe UI', 1), bg='#FFFFFF')
         }
-        self.progress_labels["left"].pack(fill=tk.X, pady=2)
-        self.progress_labels["right"].pack(fill=tk.X, pady=2)
         
         # Edit Mode Section - compact
         mode_section_label = tk.Label(sidebar_scroll, text="EDIT MODE", **section_style)
@@ -409,30 +387,31 @@ class DualKeypointLabeler:
                       activebackground='#F8F9FA', activeforeground='#212529',
                       selectcolor='#FFFFFF').pack(side=tk.LEFT, expand=True)
         
-        # Visibility controls (COCO mode) - vertical list for clarity
+        # Visibility controls (COCO mode) - readable text, compact box
         self.visibility_frame = tk.Frame(sidebar_scroll, bg='#FFFFFF', relief=tk.FLAT, bd=1)
         
         visibility_section_label = tk.Label(self.visibility_frame, text="VISIBILITY (COCO)", **section_style)
-        visibility_section_label.pack(fill=tk.X, padx=15, pady=(12, 8))
+        visibility_section_label.pack(fill=tk.X, padx=15, pady=(12, 10))
         
         visibility_button_frame = tk.Frame(self.visibility_frame, bg='#FFFFFF')
-        visibility_button_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+        visibility_button_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
         
         self.visibility_var = tk.IntVar(value=2)
-        # Vertical layout with clear labels
+        # Clear, readable labels with proper font size
         vis_options = [
-            ("v=2: Visible", 2),
-            ("v=1: Occluded", 1),
-            ("v=0: Not Labeled", 0)
+            ("Visible (v=2)", 2),
+            ("Occluded (v=1)", 1),
+            ("Not Labeled (v=0)", 0)
         ]
         
         for text, value in vis_options:
             rb = tk.Radiobutton(visibility_button_frame, text=text, 
                               variable=self.visibility_var, value=value,
-                              font=('Segoe UI', 9), bg='#FFFFFF', fg='#212529',
+                              font=('Segoe UI', 10), bg='#FFFFFF', fg='#212529',
                               activebackground='#F8F9FA', activeforeground='#212529',
-                              selectcolor='#FFFFFF', anchor='w')
-            rb.pack(fill=tk.X, pady=3)
+                              selectcolor='#FFFFFF', anchor='w',
+                              padx=5, pady=4)
+            rb.pack(fill=tk.X, pady=2)
         
         # Actions Section - compact
         actions_section_label = tk.Label(sidebar_scroll, text="ACTIONS", **section_style)
@@ -495,7 +474,22 @@ class DualKeypointLabeler:
                                  bg='#212529', fg='#FFFFFF',
                                  activebackground='#495057', activeforeground='#FFFFFF',
                                  **action_btn_style)
-        copy_both_btn.pack(fill=tk.X, padx=10, pady=(0, 8), ipady=4)
+        copy_both_btn.pack(fill=tk.X, padx=10, pady=(0, 4), ipady=4)
+        
+        # Copy only keypoints or only visibility buttons
+        copy_kp_btn = tk.Button(actions_frame, text="Copy Keypoints Only (Ctrl+Shift+A)", 
+                               command=self.copy_keypoints_only,
+                               bg='#007BFF', fg='#FFFFFF',
+                               activebackground='#0056B3', activeforeground='#FFFFFF',
+                               **action_btn_style)
+        copy_kp_btn.pack(fill=tk.X, padx=10, pady=(0, 4), ipady=4)
+        
+        copy_vis_btn = tk.Button(actions_frame, text="Copy Visibility Only (Ctrl+Shift+V)", 
+                                command=self.copy_visibility_only,
+                                bg='#28A745', fg='#FFFFFF',
+                                activebackground='#1E7E34', activeforeground='#FFFFFF',
+                                **action_btn_style)
+        copy_vis_btn.pack(fill=tk.X, padx=10, pady=(0, 8), ipady=4)
         
         # Visibility Guide Section (COCO mode) - improved readability
         self.visibility_guide_frame = tk.Frame(sidebar_scroll, bg='#FFFFFF', relief=tk.FLAT, bd=1)
@@ -845,6 +839,10 @@ Out of Frame: 사진 영역 밖"""
         self.root.bind("<Control-B>", lambda e: self.copy_from_previous_frame_both())
         self.root.bind("<Control-z>", lambda e: self.undo_action())
         self.root.bind("<Control-y>", lambda e: self.redo_action())
+        self.root.bind("<Control-Shift-A>", lambda e: self.copy_keypoints_only())
+        self.root.bind("<Control-Shift-a>", lambda e: self.copy_keypoints_only())
+        self.root.bind("<Control-Shift-V>", lambda e: self.copy_visibility_only())
+        self.root.bind("<Control-Shift-v>", lambda e: self.copy_visibility_only())
         
         # Additional keyboard shortcuts
         self.root.bind("<KeyPress-m>", lambda e: self.set_mode("move"))
@@ -1096,11 +1094,15 @@ Out of Frame: 사진 영역 밖"""
                     'keypoints': []
                 }
             
-            # Reset zoom
+            # Reset zoom state when loading new image
+            # This ensures scale factors are recalculated correctly
             self.zoom_modes[side] = False
             self.selected_keypoints[side] = None
             self.undo_stacks[side].clear()
             self.redo_stacks[side].clear()
+            
+            # Clear image cache to force recalculation
+            self._image_cache[side] = None
             
             self.display_image(side)
             self.update_keypoint_list(side)
@@ -1255,15 +1257,16 @@ Out of Frame: 사진 영역 밖"""
                 x, y = float(kp[0]), float(kp[1])
                 if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
                     continue
-                if x < 0 or y < 0:
-                    continue
                 
+                # Validate and clamp coordinates to image bounds
                 if self.current_images[side]:
-                    max_x = self.current_images[side].width * 10
-                    max_y = self.current_images[side].height * 10
-                    if x > max_x or y > max_y:
+                    x = max(0, min(x, self.current_images[side].width))
+                    y = max(0, min(y, self.current_images[side].height))
+                else:
+                    if x < 0 or y < 0:
                         continue
                 
+                # Convert image coordinates to display coordinates
                 display_x = x * scale_factor
                 display_y = y * scale_factor
                 visibility = int(kp[2]) if len(kp) >= 3 else 2
@@ -1323,30 +1326,41 @@ Out of Frame: 사진 영역 밖"""
             # Check if this keypoint is selected (highlight it)
             is_selected = (self.selected_keypoints[side] == idx)
             
+            # Scale keypoint radius with zoom for better visibility
+            # Base radius scales with zoom, but with reasonable min/max limits
+            base_radius = self.keypoint_radius
+            radius = max(4, min(20, base_radius * scale_factor))
+            
             # Highlight selected keypoint
             if is_selected:
                 outline_color = '#FFFF00'  # Yellow highlight
-                outline_width = 3
+                outline_width = max(2, int(3 * scale_factor))
+                highlight_radius = radius + max(2, int(3 * scale_factor))
                 # Draw larger outer circle for selected
                 canvas.create_oval(
-                    display_x - self.keypoint_radius - 3, display_y - self.keypoint_radius - 3,
-                    display_x + self.keypoint_radius + 3, display_y + self.keypoint_radius + 3,
-                    outline='#FFFF00', width=2, tags=f"keypoint_{idx}_highlight"
+                    display_x - highlight_radius, display_y - highlight_radius,
+                    display_x + highlight_radius, display_y + highlight_radius,
+                    outline='#FFFF00', width=outline_width, tags=f"keypoint_{idx}_highlight"
                 )
             
-            radius = self.keypoint_radius
+            # Scale outline width with zoom
+            scaled_outline_width = max(1, int(outline_width * scale_factor))
             canvas.create_oval(
                 display_x - radius, display_y - radius,
                 display_x + radius, display_y + radius,
-                fill=fill_color, outline=outline_color, width=outline_width,
+                fill=fill_color, outline=outline_color, width=scaled_outline_width,
                 tags=f"keypoint_{idx}"
             )
             
             if self.show_keypoint_labels:
                 label = self.keypoint_names[idx % len(self.keypoint_names)]
+                # Label offset scales with radius to maintain proper spacing
+                label_offset = radius + max(8, int(10 * scale_factor))
+                # Scale font size with zoom for better readability (but with limits)
+                font_size = max(8, min(14, int(8 * scale_factor)))
                 canvas.create_text(
-                    display_x, display_y - radius - 10,
-                    text=label, fill=color, font=('Arial', 8, 'bold'),
+                    display_x, display_y - label_offset,
+                    text=label, fill=color, font=('Arial', font_size, 'bold'),
                     tags=f"keypoint_{idx}"
                 )
     
@@ -1367,8 +1381,17 @@ Out of Frame: 사진 영역 밖"""
         canvas_x = self.canvases[side].canvasx(event.x)
         canvas_y = self.canvases[side].canvasy(event.y)
         
-        img_x = canvas_x / self.scale_factors[side]
-        img_y = canvas_y / self.scale_factors[side]
+        # Convert canvas coordinates to image coordinates
+        if self.scale_factors[side] > 0:
+            img_x = canvas_x / self.scale_factors[side]
+            img_y = canvas_y / self.scale_factors[side]
+        else:
+            return
+        
+        # Validate coordinates are within image bounds
+        if self.current_images[side]:
+            img_x = max(0, min(img_x, self.current_images[side].width))
+            img_y = max(0, min(img_y, self.current_images[side].height))
         
         mode = self.edit_mode.get()
         
@@ -1380,6 +1403,10 @@ Out of Frame: 사진 영역 밖"""
             self.save_state(side)
             if 'keypoints' not in self.current_annotations[side]:
                 self.current_annotations[side]['keypoints'] = []
+            
+            # Store coordinates with precision (round to 1 decimal place for consistency)
+            img_x = round(img_x, 1)
+            img_y = round(img_y, 1)
             
             if self.format_mode == "coco":
                 visibility = self.visibility_var.get()
@@ -1416,8 +1443,21 @@ Out of Frame: 사진 영역 밖"""
             canvas_x = self.canvases[side].canvasx(event.x)
             canvas_y = self.canvases[side].canvasy(event.y)
             
-            img_x = canvas_x / self.scale_factors[side]
-            img_y = canvas_y / self.scale_factors[side]
+            # Convert canvas coordinates to image coordinates
+            if self.scale_factors[side] > 0:
+                img_x = canvas_x / self.scale_factors[side]
+                img_y = canvas_y / self.scale_factors[side]
+            else:
+                return
+            
+            # Validate coordinates are within image bounds
+            if self.current_images[side]:
+                img_x = max(0, min(img_x, self.current_images[side].width))
+                img_y = max(0, min(img_y, self.current_images[side].height))
+            
+            # Round coordinates for consistency
+            img_x = round(img_x, 1)
+            img_y = round(img_y, 1)
             
             keypoints = self.current_annotations[side].get('keypoints', [])
             if self.selected_keypoints[side] < len(keypoints):
@@ -1778,15 +1818,15 @@ Out of Frame: 사진 영역 밖"""
             self.update_status("Navigated both sides forward")
     
     def update_image_index_label(self, side):
-        """Update image index label for a side"""
+        """Update image index label - labels are hidden in navigation, only shown on canvas"""
         if self.image_lists[side]:
-            index_text = f"{side.upper()}: {self.current_image_indices[side] + 1}/{len(self.image_lists[side])}"
-            self.image_index_labels[side].config(text=index_text)
-            # Also update navigation label on canvas
+            # Update navigation label on canvas
             if side == "left":
-                self.left_nav_label.config(text=index_text)
+                canvas_text = f"Left: {self.current_image_indices[side] + 1}/{len(self.image_lists[side])}"
+                self.left_nav_label.config(text=canvas_text)
             else:
-                self.right_nav_label.config(text=index_text)
+                canvas_text = f"Right: {self.current_image_indices[side] + 1}/{len(self.image_lists[side])}"
+                self.right_nav_label.config(text=canvas_text)
         else:
             # No images loaded
             if side == "left":
@@ -1800,14 +1840,9 @@ Out of Frame: 사진 영역 밖"""
             self.progress_labels[side].config(text=f"Progress: 0/0 (0%)")
             return
         
-        total = len(self.image_lists[side])
-        annotated = sum(1 for img in self.image_lists[side] 
-                       if self.is_image_annotated(side, img))
-        percentage = (annotated / total * 100) if total > 0 else 0
-        
-        self.progress_labels[side].config(
-            text=f"Progress: {annotated}/{total} ({percentage:.1f}%)"
-        )
+        # Progress is no longer shown in navigation section
+        # This function is kept for compatibility but doesn't update navigation labels
+        pass
     
     def is_image_annotated(self, side, image_path):
         """Check if image has annotations"""
@@ -2024,6 +2059,165 @@ Out of Frame: 사진 영역 밖"""
         valid_count = sum(1 for kp in cleaned_keypoints if kp and len(kp) >= 2)
         self.update_keypoint_list(side)
         self.update_status(f"Copied {valid_count} keypoints from previous frame ({side})")
+    
+    def copy_keypoints_only(self):
+        """Copy only keypoint coordinates from previous frame, keeping current visibility"""
+        side = self.active_side
+        if not self.current_annotations[side]:
+            messagebox.showwarning("Warning", "No current annotation to copy to")
+            return
+        
+        if self.current_image_indices[side] == 0:
+            messagebox.showwarning("Warning", "This is the first image. No previous frame to copy from.")
+            return
+        
+        if not self.annotations_data[side]:
+            messagebox.showwarning("Warning", "No annotation data loaded")
+            return
+        
+        self.save_state(side)
+        
+        prev_image_path = self.image_lists[side][self.current_image_indices[side] - 1]
+        prev_full_path = os.path.join(self.image_folders[side], prev_image_path)
+        prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders[side])
+        
+        prev_annotation = None
+        if prev_rel_path and prev_rel_path in self.annotation_dicts[side]:
+            prev_annotation = self.annotation_dicts[side][prev_rel_path]
+        else:
+            filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
+            if filename in self.annotation_dicts[side]:
+                prev_annotation = self.annotation_dicts[side][filename]
+        
+        if not prev_annotation:
+            messagebox.showwarning("Warning", "No annotation found for previous image")
+            return
+        
+        prev_keypoints = prev_annotation.get('keypoints', [])
+        if not prev_keypoints:
+            messagebox.showinfo("Info", "Previous image has no keypoints to copy")
+            return
+        
+        current_keypoints = self.current_annotations[side].get('keypoints', [])
+        
+        # Copy only coordinates, preserve current visibility
+        updated_count = 0
+        for idx, prev_kp in enumerate(prev_keypoints):
+            if prev_kp is None or not isinstance(prev_kp, (list, tuple)) or len(prev_kp) < 2:
+                continue
+            
+            try:
+                x, y = float(prev_kp[0]), float(prev_kp[1])
+                if not (isinstance(x, (int, float)) and isinstance(y, (int, float))):
+                    continue
+                
+                # Ensure current keypoints list is long enough
+                while len(current_keypoints) <= idx:
+                    current_keypoints.append(None)
+                
+                # Preserve existing visibility or use default
+                if current_keypoints[idx] and isinstance(current_keypoints[idx], (list, tuple)) and len(current_keypoints[idx]) >= 3:
+                    # Keep existing visibility
+                    visibility = int(current_keypoints[idx][2])
+                elif self.format_mode == "coco":
+                    # Use default visibility for COCO mode
+                    visibility = self.default_visibility
+                else:
+                    # Standard mode, no visibility
+                    current_keypoints[idx] = [x, y]
+                    updated_count += 1
+                    continue
+                
+                current_keypoints[idx] = [x, y, visibility]
+                updated_count += 1
+            except (ValueError, TypeError):
+                continue
+        
+        self.current_annotations[side]['keypoints'] = current_keypoints
+        self.unsaved_changes[side] = True
+        self.display_image(side)
+        self.update_keypoint_list(side)
+        self.update_progress(side)
+        self.update_status(f"Copied keypoint coordinates from previous frame ({updated_count} updated)")
+    
+    def copy_visibility_only(self):
+        """Copy only visibility values from previous frame, keeping current coordinates"""
+        side = self.active_side
+        if not self.current_annotations[side]:
+            messagebox.showwarning("Warning", "No current annotation to copy to")
+            return
+        
+        if self.current_image_indices[side] == 0:
+            messagebox.showwarning("Warning", "This is the first image. No previous frame to copy from.")
+            return
+        
+        if not self.annotations_data[side]:
+            messagebox.showwarning("Warning", "No annotation data loaded")
+            return
+        
+        if self.format_mode != "coco":
+            messagebox.showinfo("Info", "Visibility copying is only available in COCO mode")
+            return
+        
+        self.save_state(side)
+        
+        prev_image_path = self.image_lists[side][self.current_image_indices[side] - 1]
+        prev_full_path = os.path.join(self.image_folders[side], prev_image_path)
+        prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders[side])
+        
+        prev_annotation = None
+        if prev_rel_path and prev_rel_path in self.annotation_dicts[side]:
+            prev_annotation = self.annotation_dicts[side][prev_rel_path]
+        else:
+            filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
+            if filename in self.annotation_dicts[side]:
+                prev_annotation = self.annotation_dicts[side][filename]
+        
+        if not prev_annotation:
+            messagebox.showwarning("Warning", "No annotation found for previous image")
+            return
+        
+        prev_keypoints = prev_annotation.get('keypoints', [])
+        if not prev_keypoints:
+            messagebox.showinfo("Info", "Previous image has no keypoints to copy")
+            return
+        
+        current_keypoints = self.current_annotations[side].get('keypoints', [])
+        
+        # Copy only visibility, preserve current coordinates
+        updated_count = 0
+        for idx, prev_kp in enumerate(prev_keypoints):
+            if prev_kp is None or not isinstance(prev_kp, (list, tuple)) or len(prev_kp) < 3:
+                continue
+            
+            try:
+                visibility = int(prev_kp[2])
+                if visibility not in [0, 1, 2]:
+                    continue
+                
+                # Ensure current keypoints list is long enough
+                while len(current_keypoints) <= idx:
+                    current_keypoints.append(None)
+                
+                # Preserve existing coordinates
+                if current_keypoints[idx] and isinstance(current_keypoints[idx], (list, tuple)) and len(current_keypoints[idx]) >= 2:
+                    x, y = float(current_keypoints[idx][0]), float(current_keypoints[idx][1])
+                    current_keypoints[idx] = [x, y, visibility]
+                    updated_count += 1
+                elif prev_kp and isinstance(prev_kp, (list, tuple)) and len(prev_kp) >= 2:
+                    # If current doesn't exist but previous does, copy both coordinates and visibility
+                    x, y = float(prev_kp[0]), float(prev_kp[1])
+                    current_keypoints[idx] = [x, y, visibility]
+                    updated_count += 1
+            except (ValueError, TypeError):
+                continue
+        
+        self.current_annotations[side]['keypoints'] = current_keypoints
+        self.unsaved_changes[side] = True
+        self.display_image(side)
+        self.update_keypoint_list(side)
+        self.update_progress(side)
+        self.update_status(f"Copied visibility values from previous frame ({updated_count} updated)")
     
     def copy_from_previous_frame_both(self):
         """Copy keypoints from previous frame on BOTH sides simultaneously"""
@@ -2376,11 +2570,15 @@ Out of Frame: 사진 영역 밖"""
                 keypoints = ann.get('keypoints', [])
                 
                 coco_keypoints = []
+                visible_count = 0
                 for kp in keypoints:
                     if len(kp) >= 2:
                         x, y = float(kp[0]), float(kp[1])
                         v = int(kp[2]) if len(kp) >= 3 else 2
                         coco_keypoints.extend([x, y, v])
+                        # Count only visible keypoints (v > 0)
+                        if v > 0:
+                            visible_count += 1
                 
                 if coco_keypoints:
                     xs = [kp[0] for kp in keypoints if len(kp) >= 2]
@@ -2399,7 +2597,7 @@ Out of Frame: 사진 영역 밖"""
                             "image_id": img_id,
                             "category_id": 1,
                             "keypoints": coco_keypoints,
-                            "num_keypoints": len(keypoints),
+                            "num_keypoints": visible_count,
                             "bbox": [x_min, y_min, bbox_width, bbox_height],
                             "area": bbox_width * bbox_height,
                             "iscrowd": 0
