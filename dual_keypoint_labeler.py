@@ -153,6 +153,14 @@ class DualKeypointLabeler:
         export_dropdown.add_separator()
         export_dropdown.add_command(label="Export Statistics...", command=self.export_statistics)
         
+        # Save Both button - saves both sides in original + COCO formats
+        save_both_btn = tk.Button(header_btn_frame, text="Save Both", 
+                                 font=('Segoe UI', 9), bg='#FF6B35', fg='#FFFFFF',
+                                 activebackground='#E55A2B', activeforeground='#FFFFFF',
+                                 relief=tk.FLAT, bd=1, padx=12, pady=6, cursor='hand2',
+                                 command=self.save_both_sides)
+        save_both_btn.pack(side=tk.LEFT, padx=5)
+        
         # Menu bar (hidden, accessible via header)
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
@@ -2509,6 +2517,242 @@ Out of Frame: 사진 영역 밖"""
                     messagebox.showinfo("Success", f"Standard annotations saved ({side})")
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to save annotations: {str(e)}")
+    
+    def save_to_coco_file(self, side, file_path):
+        """Save annotations to COCO format file (helper function)"""
+        if not self.annotations_data[side]:
+            return False, f"No annotations to save for {side} side"
+        
+        try:
+            coco_data = {
+                "info": {
+                    "description": f"Exported from Dual Keypoint Labeler ({side})",
+                    "version": "1.0",
+                    "year": 2024
+                },
+                "licenses": [],
+                "images": [],
+                "annotations": [],
+                "categories": [{
+                    "id": 1,
+                    "name": "person",
+                    "supercategory": "person",
+                    "keypoints": self.keypoint_names,
+                    "skeleton": self.skeleton
+                }]
+            }
+            
+            image_id_map = {}
+            image_id = 1
+            annotation_id = 1
+            
+            for ann in self.annotations_data[side].get('annotations', []):
+                img_path = ann.get('image', '')
+                if not img_path:
+                    continue
+                
+                if img_path not in image_id_map:
+                    image_id_map[img_path] = image_id
+                    coco_data["images"].append({
+                        "id": image_id,
+                        "file_name": img_path,
+                        "width": ann.get('width', 0),
+                        "height": ann.get('height', 0)
+                    })
+                    image_id += 1
+                
+                img_id = image_id_map[img_path]
+                keypoints = ann.get('keypoints', [])
+                
+                coco_keypoints = []
+                visible_count = 0
+                for kp in keypoints:
+                    if len(kp) >= 2:
+                        x, y = float(kp[0]), float(kp[1])
+                        v = int(kp[2]) if len(kp) >= 3 else 2
+                        coco_keypoints.extend([x, y, v])
+                        # Count only visible keypoints (v > 0)
+                        if v > 0:
+                            visible_count += 1
+                
+                if coco_keypoints:
+                    xs = [kp[0] for kp in keypoints if len(kp) >= 2]
+                    ys = [kp[1] for kp in keypoints if len(kp) >= 2]
+                    
+                    if xs and ys:
+                        x_min, x_max = min(xs), max(xs)
+                        y_min, y_max = min(ys), max(ys)
+                        bbox_width = x_max - x_min + 20
+                        bbox_height = y_max - y_min + 20
+                        x_min = max(0, x_min - 10)
+                        y_min = max(0, y_min - 10)
+                        
+                        coco_data["annotations"].append({
+                            "id": annotation_id,
+                            "image_id": img_id,
+                            "category_id": 1,
+                            "keypoints": coco_keypoints,
+                            "num_keypoints": visible_count,
+                            "bbox": [x_min, y_min, bbox_width, bbox_height],
+                            "area": bbox_width * bbox_height,
+                            "iscrowd": 0
+                        })
+                        annotation_id += 1
+            
+            with open(file_path, 'w') as f:
+                json.dump(coco_data, f, indent=2)
+            
+            return True, f"Saved {len(coco_data['annotations'])} annotations"
+        except Exception as e:
+            return False, f"Failed to save COCO format: {str(e)}"
+    
+    def save_both_sides(self):
+        """Save both left and right sides in original and COCO formats (4 files total)"""
+        results = []
+        
+        # Save Left side
+        left_original_saved = False
+        left_coco_saved = False
+        
+        if self.annotations_data["left"]:
+            # Save left original format
+            if self.annotation_files["left"]:
+                try:
+                    if 'info' in self.annotations_data["left"]:
+                        self.annotations_data["left"]["info"]["num_images"] = len(self.annotations_data["left"]["annotations"])
+                        if self.annotations_data["left"]["annotations"]:
+                            max_kp = max(len(ann.get('keypoints', [])) for ann in self.annotations_data["left"]["annotations"])
+                            self.annotations_data["left"]["info"]["num_keypoints"] = max_kp
+                    
+                    with open(self.annotation_files["left"], 'w') as f:
+                        json.dump(self.annotations_data["left"], f, indent=2)
+                    
+                    self.unsaved_changes["left"] = False
+                    import time
+                    self.last_save_times["left"] = time.time()
+                    left_original_saved = True
+                    results.append(f"Left original: {os.path.basename(self.annotation_files['left'])}")
+                except Exception as e:
+                    results.append(f"Left original: ERROR - {str(e)}")
+            else:
+                results.append("Left original: No file path set")
+            
+            # Save left COCO format
+            if self.annotation_files["left"]:
+                coco_path = os.path.splitext(self.annotation_files["left"])[0] + "_coco.json"
+            else:
+                # Try to determine from annotation data
+                if self.annotations_data["left"].get('annotations'):
+                    # Use a default path
+                    coco_path = "left_annotations_coco.json"
+                else:
+                    coco_path = None
+            
+            if coco_path:
+                success, message = self.save_to_coco_file("left", coco_path)
+                if success:
+                    self.coco_annotation_files["left"] = coco_path
+                    left_coco_saved = True
+                    results.append(f"Left COCO: {os.path.basename(coco_path)}")
+                else:
+                    results.append(f"Left COCO: ERROR - {message}")
+            else:
+                results.append("Left COCO: No file path available")
+        else:
+            results.append("Left: No annotations to save")
+        
+        # Save Right side
+        right_original_saved = False
+        right_coco_saved = False
+        
+        if self.annotations_data["right"]:
+            # Save right original format
+            if self.annotation_files["right"]:
+                try:
+                    if 'info' in self.annotations_data["right"]:
+                        self.annotations_data["right"]["info"]["num_images"] = len(self.annotations_data["right"]["annotations"])
+                        if self.annotations_data["right"]["annotations"]:
+                            max_kp = max(len(ann.get('keypoints', [])) for ann in self.annotations_data["right"]["annotations"])
+                            self.annotations_data["right"]["info"]["num_keypoints"] = max_kp
+                    
+                    with open(self.annotation_files["right"], 'w') as f:
+                        json.dump(self.annotations_data["right"], f, indent=2)
+                    
+                    self.unsaved_changes["right"] = False
+                    import time
+                    self.last_save_times["right"] = time.time()
+                    right_original_saved = True
+                    results.append(f"Right original: {os.path.basename(self.annotation_files['right'])}")
+                except Exception as e:
+                    results.append(f"Right original: ERROR - {str(e)}")
+            else:
+                results.append("Right original: No file path set")
+            
+            # Save right COCO format
+            if self.annotation_files["right"]:
+                coco_path = os.path.splitext(self.annotation_files["right"])[0] + "_coco.json"
+            else:
+                # Try to determine from annotation data
+                if self.annotations_data["right"].get('annotations'):
+                    # Use a default path
+                    coco_path = "right_annotations_coco.json"
+                else:
+                    coco_path = None
+            
+            if coco_path:
+                success, message = self.save_to_coco_file("right", coco_path)
+                if success:
+                    self.coco_annotation_files["right"] = coco_path
+                    right_coco_saved = True
+                    results.append(f"Right COCO: {os.path.basename(coco_path)}")
+                else:
+                    results.append(f"Right COCO: ERROR - {message}")
+            else:
+                results.append("Right COCO: No file path available")
+        else:
+            results.append("Right: No annotations to save")
+        
+        # Update save indicators and labels
+        if left_original_saved:
+            self.save_indicators["left"].config(text="✓ Saved", foreground="green")
+            self.root.after(2000, lambda: self.save_indicators["left"].config(text=""))
+            
+            # Update left annotation label to show both files
+            if self.annotation_files["left"] and self.coco_annotation_files["left"]:
+                std_path = self.annotation_files["left"]
+                coco_path = self.coco_annotation_files["left"]
+                std_display = std_path if len(std_path) <= 40 else "..." + std_path[-37:]
+                coco_display = coco_path if len(coco_path) <= 40 else "..." + coco_path[-37:]
+                self.annotation_labels["left"].config(text=f"Standard: {std_display} | COCO: {coco_display}")
+                if hasattr(self, 'left_annotation_label_canvas'):
+                    self.left_annotation_label_canvas.config(text=f"Standard: {std_display} | COCO: {coco_display}")
+        
+        if right_original_saved and self.save_indicators["right"]:
+            self.save_indicators["right"].config(text="✓ Saved", foreground="green")
+            self.root.after(2000, lambda: self.save_indicators["right"].config(text=""))
+            
+            # Update right annotation label to show both files
+            if self.annotation_files["right"] and self.coco_annotation_files["right"]:
+                std_path = self.annotation_files["right"]
+                coco_path = self.coco_annotation_files["right"]
+                std_display = std_path if len(std_path) <= 40 else "..." + std_path[-37:]
+                coco_display = coco_path if len(coco_path) <= 40 else "..." + coco_path[-37:]
+                self.annotation_labels["right"].config(text=f"Standard: {std_display} | COCO: {coco_display}")
+                if hasattr(self, 'right_annotation_label_canvas'):
+                    self.right_annotation_label_canvas.config(text=f"Standard: {std_display} | COCO: {coco_display}")
+        
+        # Update status and show message
+        result_text = "\n".join(results)
+        saved_count = sum([left_original_saved, left_coco_saved, right_original_saved, right_coco_saved])
+        
+        self.update_status(f"Saved {saved_count} files: {result_text}")
+        
+        if saved_count > 0:
+            messagebox.showinfo("Save Both Complete", 
+                              f"Saved {saved_count} file(s):\n\n{result_text}")
+        else:
+            messagebox.showwarning("Warning", 
+                                 f"Could not save files:\n\n{result_text}")
     
     def export_to_coco(self, side=None):
         """Export annotations to COCO format"""
