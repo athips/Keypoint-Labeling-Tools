@@ -42,7 +42,7 @@ class DualKeypointLabeler:
         
         # Keypoint editing state
         self.selected_keypoints = {"left": None, "right": None}
-        self.keypoint_radius = 8
+        self.keypoint_radius = 4  # Reduced from 8 for better visibility of points
         
         # Undo/Redo system for both sides
         self.undo_stacks = {"left": [], "right": []}
@@ -557,6 +557,28 @@ Out of Frame: 사진 영역 밖"""
                       activebackground='#F8F9FA', activeforeground='#212529',
                       selectcolor='#FFFFFF').pack(anchor=tk.W, padx=12, pady=(0, 6))
         
+        # Keypoint radius slider
+        radius_frame = tk.Frame(visual_frame, bg='#FFFFFF')
+        radius_frame.pack(fill=tk.X, padx=12, pady=(0, 6))
+        
+        radius_label = tk.Label(radius_frame, text="Keypoint Size:", 
+                               font=('Segoe UI', 9), bg='#FFFFFF', fg='#212529')
+        radius_label.pack(anchor=tk.W, pady=(0, 4))
+        
+        radius_slider_frame = tk.Frame(radius_frame, bg='#FFFFFF')
+        radius_slider_frame.pack(fill=tk.X)
+        
+        self.radius_var = tk.IntVar(value=self.keypoint_radius)
+        radius_slider = ttk.Scale(radius_slider_frame, from_=2, to=12, 
+                                 variable=self.radius_var, orient=tk.HORIZONTAL,
+                                 command=self.on_radius_change)
+        radius_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        
+        self.radius_value_label = tk.Label(radius_slider_frame, text=str(self.keypoint_radius),
+                                           font=('Segoe UI', 9), bg='#FFFFFF', fg='#212529',
+                                           width=3)
+        self.radius_value_label.pack(side=tk.RIGHT)
+        
         # Right panel - dual image display (professional styling)
         right_panel = tk.Frame(main_frame, bg='#FFFFFF')
         right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -686,7 +708,7 @@ Out of Frame: 사진 영역 밖"""
         left_kp_columns_frame = ttk.Frame(left_kp_list_frame)
         left_kp_columns_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Create 4 columns for keypoints with better styling
+        # Create 4 columns for keypoints + 1 column for image list
         self.left_kp_listboxes = []
         for col in range(4):
             col_frame = ttk.Frame(left_kp_columns_frame)
@@ -699,6 +721,28 @@ Out of Frame: 사진 영역 밖"""
                                highlightbackground='#E0E0E0', highlightcolor='#757575')
             listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             self.left_kp_listboxes.append(listbox)
+        
+        # Add image list column (5th column)
+        image_list_frame = ttk.Frame(left_kp_columns_frame)
+        image_list_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
+        
+        image_list_label = ttk.Label(image_list_frame, text="Image List:", font=('Segoe UI', 8, 'bold'))
+        image_list_label.pack(side=tk.TOP, anchor='w', pady=(0, 2))
+        
+        self.left_image_listbox = tk.Listbox(image_list_frame, height=5, font=('Courier', 8), width=25,
+                                            bg='white', fg='#212121',
+                                            selectbackground='#2196F3', selectforeground='#FFFFFF',
+                                            relief=tk.SUNKEN, bd=1, highlightthickness=1,
+                                            highlightbackground='#E0E0E0', highlightcolor='#2196F3')
+        self.left_image_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add scrollbar for image list
+        left_img_scrollbar = ttk.Scrollbar(image_list_frame, orient=tk.VERTICAL, command=self.left_image_listbox.yview)
+        left_img_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.left_image_listbox.config(yscrollcommand=left_img_scrollbar.set)
+        
+        # Bind double-click to jump to image
+        self.left_image_listbox.bind('<Double-Button-1>', lambda e: self.on_image_list_select("left"))
         
         # Left skeleton checkbox
         left_skeleton_frame = ttk.Frame(self.left_image_frame)
@@ -799,7 +843,7 @@ Out of Frame: 사진 영역 밖"""
         right_kp_columns_frame = ttk.Frame(right_kp_list_frame)
         right_kp_columns_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Create 4 columns for keypoints with better styling
+        # Create 4 columns for keypoints + 1 column for image list
         self.right_kp_listboxes = []
         for col in range(4):
             col_frame = ttk.Frame(right_kp_columns_frame)
@@ -812,6 +856,28 @@ Out of Frame: 사진 영역 밖"""
                                highlightbackground='#E0E0E0', highlightcolor='#757575')
             listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             self.right_kp_listboxes.append(listbox)
+        
+        # Add image list column (5th column)
+        image_list_frame = ttk.Frame(right_kp_columns_frame)
+        image_list_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=3)
+        
+        image_list_label = ttk.Label(image_list_frame, text="Image List:", font=('Segoe UI', 8, 'bold'))
+        image_list_label.pack(side=tk.TOP, anchor='w', pady=(0, 2))
+        
+        self.right_image_listbox = tk.Listbox(image_list_frame, height=5, font=('Courier', 8), width=25,
+                                             bg='white', fg='#212121',
+                                             selectbackground='#2196F3', selectforeground='#FFFFFF',
+                                             relief=tk.SUNKEN, bd=1, highlightthickness=1,
+                                             highlightbackground='#E0E0E0', highlightcolor='#2196F3')
+        self.right_image_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add scrollbar for image list
+        right_img_scrollbar = ttk.Scrollbar(image_list_frame, orient=tk.VERTICAL, command=self.right_image_listbox.yview)
+        right_img_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.right_image_listbox.config(yscrollcommand=right_img_scrollbar.set)
+        
+        # Bind double-click to jump to image
+        self.right_image_listbox.bind('<Double-Button-1>', lambda e: self.on_image_list_select("right"))
         
         # Right skeleton checkbox
         right_skeleton_frame = ttk.Frame(self.right_image_frame)
@@ -974,6 +1040,8 @@ Out of Frame: 사진 영역 밖"""
                 self.left_folder_label_canvas.config(text=f"Folder: {display_path}")
             elif side == "right" and hasattr(self, 'right_folder_label_canvas'):
                 self.right_folder_label_canvas.config(text=f"Folder: {display_path}")
+            # Reset to first image when folder changes
+            self.current_image_indices[side] = 0
             self.load_image_list(side)
             self.update_status(f"Loaded {len(self.image_lists[side])} images for {side}")
     
@@ -994,8 +1062,15 @@ Out of Frame: 사진 영역 밖"""
         self.image_lists[side].sort()
         self.update_image_index_label(side)
         self.update_progress(side)
+        self.update_image_listbox(side)
         
-        if self.image_lists[side] and self.current_image_indices[side] == 0:
+        # Always load the current image (at current index) when image list is loaded/refreshed
+        # This ensures the image updates immediately when folder changes
+        if self.image_lists[side]:
+            # Make sure index is valid
+            if self.current_image_indices[side] >= len(self.image_lists[side]):
+                self.current_image_indices[side] = 0
+            # Load the image at the current index
             self.load_current_image(side)
     
     def import_annotations(self, side):
@@ -1046,6 +1121,138 @@ Out of Frame: 사진 영역 밖"""
             return None
         return str(path).replace('\\', '/')
     
+    def find_matching_annotation(self, side, image_rel_path, image_path, image_folder=None):
+        """Find matching annotation by checking the 'image' field in JSON annotations"""
+        if not self.annotations_data[side]:
+            return None
+        
+        # Normalize both paths
+        normalized_rel_path = self.normalize_path(image_rel_path) if image_rel_path else None
+        normalized_image_path = self.normalize_path(image_path) if image_path else None
+        
+        # Use image_path (from image_lists) which contains folder structure, 
+        # fallback to image_rel_path if image_path is not available
+        path_to_match = normalized_image_path if normalized_image_path else normalized_rel_path
+        if not path_to_match:
+            return None
+        
+        filename = os.path.basename(path_to_match)
+        
+        # Extract folder name from image_folder to help with matching
+        folder_name = None
+        if image_folder:
+            # Get the last folder name (e.g., "DL_001" from "C:/path/DL/DL_001")
+            folder_name = os.path.basename(os.path.normpath(image_folder))
+            folder_name = self.normalize_path(folder_name)
+        
+        # Helper function to extract folder from annotation image path
+        def get_annotation_folder(ann):
+            """Extract folder name from annotation's image path"""
+            ann_image = ann.get('image', '')
+            if not ann_image:
+                return None
+            normalized_ann_image = self.normalize_path(ann_image)
+            ann_parts = normalized_ann_image.split('/')
+            if len(ann_parts) > 1:
+                return ann_parts[-2]  # Return folder name (e.g., "DL_001")
+            return None
+        
+        # Helper function to check if annotation matches folder
+        def folder_matches(ann, required_folder):
+            """Check if annotation's folder matches the required folder_name"""
+            if not required_folder:
+                return True  # No folder specified, accept any
+            ann_folder = get_annotation_folder(ann)
+            return ann_folder == required_folder
+        
+        # Strategy 1: Exact match with normalized paths (but verify folder if available)
+        if normalized_rel_path and normalized_rel_path in self.annotation_dicts[side]:
+            ann = self.annotation_dicts[side][normalized_rel_path]
+            if folder_matches(ann, folder_name):
+                return ann
+        
+        if normalized_image_path and normalized_image_path in self.annotation_dicts[side]:
+            ann = self.annotation_dicts[side][normalized_image_path]
+            if folder_matches(ann, folder_name):
+                return ann
+        
+        # Strategy 2: Check all annotations for path matches
+        # This handles cases where JSON has "DL/DL_001/frame_000000.jpg" 
+        # but path_to_match is "DL_001/frame_000000.jpg" or "DL/DL_001/frame_000000.jpg"
+        best_match = None
+        best_match_score = 0
+        
+        for ann_path, ann in self.annotation_dicts[side].items():
+            # CRITICAL: Filter by folder FIRST before doing any path matching
+            # This ensures we only consider annotations from the correct folder
+            if not folder_matches(ann, folder_name):
+                continue
+            
+            ann_image = ann.get('image', '')
+            if not ann_image:
+                continue
+            
+            normalized_ann_image = self.normalize_path(ann_image)
+            ann_parts = normalized_ann_image.split('/')
+            
+            # Check if annotation path ends with the path we're matching
+            # This handles: "DL/DL_001/frame_000000.jpg" matches "DL_001/frame_000000.jpg"
+            if normalized_ann_image.endswith(path_to_match):
+                # Verify it's a proper path match by checking path segments
+                match_parts = path_to_match.split('/')
+                
+                # Match if the last N parts of ann_image exactly match path_to_match
+                if len(ann_parts) >= len(match_parts):
+                    if ann_parts[-len(match_parts):] == match_parts:
+                        # Score by how many path segments match (prefer longer matches)
+                        score = len(match_parts)
+                        if best_match is None or score > best_match_score:
+                            best_match = ann
+                            best_match_score = score
+            
+            # Also check if path_to_match ends with parts of ann_image
+            # This handles: "DL/DL_001/frame_000000.jpg" matching "DL_001/frame_000000.jpg"
+            elif path_to_match.endswith(normalized_ann_image):
+                match_parts = path_to_match.split('/')
+                
+                if len(match_parts) >= len(ann_parts):
+                    if match_parts[-len(ann_parts):] == ann_parts:
+                        score = len(ann_parts)
+                        if best_match is None or score > best_match_score:
+                            best_match = ann
+                            best_match_score = score
+        
+        if best_match:
+            return best_match
+        
+        # Strategy 3: Match by filename with STRICT folder verification
+        # This is the fallback when path matching doesn't work
+        # CRITICAL: Only match if folder_name is available and matches exactly
+        if folder_name:
+            # Search all annotations for matching filename AND folder
+            for ann_path, ann in self.annotation_dicts[side].items():
+                # CRITICAL: Filter by folder FIRST
+                if not folder_matches(ann, folder_name):
+                    continue
+                
+                ann_image = ann.get('image', '')
+                if not ann_image:
+                    continue
+                
+                normalized_ann_image = self.normalize_path(ann_image)
+                ann_parts = normalized_ann_image.split('/')
+                
+                # Check if filename matches
+                if len(ann_parts) > 0 and ann_parts[-1] == filename:
+                    return ann
+        
+        # Fallback: if no folder_name available, try filename match (less reliable)
+        # But this should rarely happen if folder selection is working correctly
+        if filename in self.annotation_dicts[side] and not folder_name:
+            return self.annotation_dicts[side][filename]
+        
+        return None
+    
     def load_current_image(self, side):
         """Load current image for a side"""
         if not self.image_lists[side] or self.current_image_indices[side] >= len(self.image_lists[side]):
@@ -1070,14 +1277,9 @@ Out of Frame: 사진 영역 밖"""
             image_rel_path = self.get_relative_path(full_path, self.image_folders[side])
             
             if self.annotations_data[side]:
-                # Try to find matching annotation
-                matched_annotation = None
-                if image_rel_path and image_rel_path in self.annotation_dicts[side]:
-                    matched_annotation = self.annotation_dicts[side][image_rel_path]
-                else:
-                    filename = os.path.basename(image_rel_path) if image_rel_path else os.path.basename(image_path)
-                    if filename in self.annotation_dicts[side]:
-                        matched_annotation = self.annotation_dicts[side][filename]
+                # Try to find matching annotation using improved matching logic
+                # Pass the image folder to help with matching
+                matched_annotation = self.find_matching_annotation(side, image_rel_path, image_path, self.image_folders[side])
                 
                 if matched_annotation:
                     self.current_annotations[side] = matched_annotation
@@ -1116,6 +1318,7 @@ Out of Frame: 사진 영역 밖"""
             self.update_keypoint_list(side)
             self.update_image_index_label(side)
             self.update_progress(side)
+            self.update_image_listbox(side)  # Update image listbox to highlight current image
             
         except Exception as e:
             error_msg = f"Failed to load image: {str(e)}"
@@ -1337,13 +1540,13 @@ Out of Frame: 사진 영역 밖"""
             # Scale keypoint radius with zoom for better visibility
             # Base radius scales with zoom, but with reasonable min/max limits
             base_radius = self.keypoint_radius
-            radius = max(4, min(20, base_radius * scale_factor))
+            radius = max(2, min(12, base_radius * scale_factor))  # Reduced limits for smaller dots
             
             # Highlight selected keypoint
             if is_selected:
                 outline_color = '#FFFF00'  # Yellow highlight
-                outline_width = max(2, int(3 * scale_factor))
-                highlight_radius = radius + max(2, int(3 * scale_factor))
+                outline_width = max(1, int(2 * scale_factor))  # Reduced for smaller dots
+                highlight_radius = radius + max(1, int(2 * scale_factor))  # Reduced highlight size
                 # Draw larger outer circle for selected
                 canvas.create_oval(
                     display_x - highlight_radius, display_y - highlight_radius,
@@ -1351,8 +1554,8 @@ Out of Frame: 사진 영역 밖"""
                     outline='#FFFF00', width=outline_width, tags=f"keypoint_{idx}_highlight"
                 )
             
-            # Scale outline width with zoom
-            scaled_outline_width = max(1, int(outline_width * scale_factor))
+            # Scale outline width with zoom (reduced for smaller dots)
+            scaled_outline_width = max(1, int(outline_width * scale_factor * 0.7))  # 30% thinner outline
             canvas.create_oval(
                 display_x - radius, display_y - radius,
                 display_x + radius, display_y + radius,
@@ -1386,6 +1589,9 @@ Out of Frame: 사진 영역 밖"""
         if self.scale_factors[side] <= 0:
             return
         
+        # Initialize drag tracking
+        self._was_dragging = False
+        
         canvas_x = self.canvases[side].canvasx(event.x)
         canvas_y = self.canvases[side].canvasy(event.y)
         
@@ -1405,7 +1611,13 @@ Out of Frame: 사진 영역 밖"""
         
         if mode == "move":
             nearest_idx = self.find_nearest_keypoint(side, img_x, img_y)
+            # Always update selection, even if None (to deselect)
+            old_selection = self.selected_keypoints[side]
             self.selected_keypoints[side] = nearest_idx
+            # Update display immediately to show selection change
+            if nearest_idx != old_selection:
+                self.display_image(side)
+                self.update_keypoint_list(side)
         
         elif mode == "add":
             self.save_state(side)
@@ -1441,6 +1653,7 @@ Out of Frame: 사진 영역 밖"""
     def on_canvas_drag(self, event, side):
         """Handle canvas drag - works on the side being dragged"""
         if self.selected_keypoints[side] is not None and self.edit_mode.get() == "move":
+            self._was_dragging = True  # Mark that we're dragging
             if self.scale_factors[side] <= 0:
                 return
             
@@ -1486,7 +1699,10 @@ Out of Frame: 사진 영역 밖"""
         """Handle canvas release"""
         if hasattr(self, '_drag_state_saved'):
             delattr(self, '_drag_state_saved')
-        self.selected_keypoints[side] = None
+        # Don't deselect on release - keep selection for editing
+        # Only clear _was_dragging flag if it exists
+        if hasattr(self, '_was_dragging'):
+            delattr(self, '_was_dragging')
     
     def on_canvas_right_click(self, event, side):
         """Handle right-click - show context menu"""
@@ -1842,6 +2058,54 @@ Out of Frame: 사진 영역 밖"""
             else:
                 self.right_nav_label.config(text="Right: 0/0")
     
+    def update_image_listbox(self, side):
+        """Update the image listbox with current image list"""
+        if side == "left":
+            if not hasattr(self, 'left_image_listbox'):
+                return
+            listbox = self.left_image_listbox
+        else:
+            if not hasattr(self, 'right_image_listbox'):
+                return
+            listbox = self.right_image_listbox
+        
+        # Clear existing items
+        listbox.delete(0, tk.END)
+        
+        # Add images to listbox
+        if self.image_lists[side]:
+            for idx, image_path in enumerate(self.image_lists[side]):
+                # Show just the filename or relative path (truncate if too long)
+                display_name = os.path.basename(image_path)
+                if len(display_name) > 30:
+                    display_name = display_name[:27] + "..."
+                listbox.insert(tk.END, f"{idx+1:4d}. {display_name}")
+            
+            # Highlight current image
+            if 0 <= self.current_image_indices[side] < len(self.image_lists[side]):
+                listbox.selection_clear(0, tk.END)
+                listbox.selection_set(self.current_image_indices[side])
+                listbox.see(self.current_image_indices[side])
+    
+    def on_image_list_select(self, side):
+        """Handle image selection from image listbox"""
+        if side == "left":
+            if not hasattr(self, 'left_image_listbox'):
+                return
+            listbox = self.left_image_listbox
+        else:
+            if not hasattr(self, 'right_image_listbox'):
+                return
+            listbox = self.right_image_listbox
+        
+        selection = listbox.curselection()
+        if selection and self.image_lists[side]:
+            selected_idx = selection[0]
+            if 0 <= selected_idx < len(self.image_lists[side]):
+                self.current_image_indices[side] = selected_idx
+                self.load_current_image(side)
+                self.update_status(f"Jumped to image {selected_idx + 1}/{len(self.image_lists[side])} ({side})")
+    
     def update_progress(self, side):
         """Update progress for a side"""
         if not self.image_lists[side]:
@@ -2019,13 +2283,7 @@ Out of Frame: 사진 영역 밖"""
         prev_full_path = os.path.join(self.image_folders[side], prev_image_path)
         prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders[side])
         
-        prev_annotation = None
-        if prev_rel_path and prev_rel_path in self.annotation_dicts[side]:
-            prev_annotation = self.annotation_dicts[side][prev_rel_path]
-        else:
-            filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
-            if filename in self.annotation_dicts[side]:
-                prev_annotation = self.annotation_dicts[side][filename]
+        prev_annotation = self.find_matching_annotation(side, prev_rel_path, prev_image_path, self.image_folders[side])
         
         if not prev_annotation:
             messagebox.showwarning("Warning", "No annotation found for previous image")
@@ -2089,13 +2347,7 @@ Out of Frame: 사진 영역 밖"""
         prev_full_path = os.path.join(self.image_folders[side], prev_image_path)
         prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders[side])
         
-        prev_annotation = None
-        if prev_rel_path and prev_rel_path in self.annotation_dicts[side]:
-            prev_annotation = self.annotation_dicts[side][prev_rel_path]
-        else:
-            filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
-            if filename in self.annotation_dicts[side]:
-                prev_annotation = self.annotation_dicts[side][filename]
+        prev_annotation = self.find_matching_annotation(side, prev_rel_path, prev_image_path, self.image_folders[side])
         
         if not prev_annotation:
             messagebox.showwarning("Warning", "No annotation found for previous image")
@@ -2173,13 +2425,7 @@ Out of Frame: 사진 영역 밖"""
         prev_full_path = os.path.join(self.image_folders[side], prev_image_path)
         prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders[side])
         
-        prev_annotation = None
-        if prev_rel_path and prev_rel_path in self.annotation_dicts[side]:
-            prev_annotation = self.annotation_dicts[side][prev_rel_path]
-        else:
-            filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
-            if filename in self.annotation_dicts[side]:
-                prev_annotation = self.annotation_dicts[side][filename]
+        prev_annotation = self.find_matching_annotation(side, prev_rel_path, prev_image_path, self.image_folders[side])
         
         if not prev_annotation:
             messagebox.showwarning("Warning", "No annotation found for previous image")
@@ -2242,13 +2488,7 @@ Out of Frame: 사진 영역 밖"""
                 prev_full_path = os.path.join(self.image_folders["left"], prev_image_path)
                 prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders["left"])
                 
-                prev_annotation = None
-                if prev_rel_path and prev_rel_path in self.annotation_dicts["left"]:
-                    prev_annotation = self.annotation_dicts["left"][prev_rel_path]
-                else:
-                    filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
-                    if filename in self.annotation_dicts["left"]:
-                        prev_annotation = self.annotation_dicts["left"][filename]
+                prev_annotation = self.find_matching_annotation("left", prev_rel_path, prev_image_path, self.image_folders["left"])
                 
                 if prev_annotation:
                     prev_keypoints = prev_annotation.get('keypoints', [])
@@ -2294,13 +2534,7 @@ Out of Frame: 사진 영역 밖"""
                 prev_full_path = os.path.join(self.image_folders["right"], prev_image_path)
                 prev_rel_path = self.get_relative_path(prev_full_path, self.image_folders["right"])
                 
-                prev_annotation = None
-                if prev_rel_path and prev_rel_path in self.annotation_dicts["right"]:
-                    prev_annotation = self.annotation_dicts["right"][prev_rel_path]
-                else:
-                    filename = os.path.basename(prev_rel_path) if prev_rel_path else os.path.basename(prev_image_path)
-                    if filename in self.annotation_dicts["right"]:
-                        prev_annotation = self.annotation_dicts["right"][filename]
+                prev_annotation = self.find_matching_annotation("right", prev_rel_path, prev_image_path, self.image_folders["right"])
                 
                 if prev_annotation:
                     prev_keypoints = prev_annotation.get('keypoints', [])
@@ -2415,6 +2649,16 @@ Out of Frame: 사진 영역 밖"""
     def toggle_labels(self):
         """Toggle keypoint label visibility"""
         self.show_keypoint_labels = self.labels_var.get()
+        for side in ["left", "right"]:
+            if self.current_images[side]:
+                self.display_image(side)
+    
+    def on_radius_change(self, value=None):
+        """Handle keypoint radius slider change"""
+        new_radius = int(self.radius_var.get())
+        self.keypoint_radius = new_radius
+        self.radius_value_label.config(text=str(new_radius))
+        # Update display for both sides
         for side in ["left", "right"]:
             if self.current_images[side]:
                 self.display_image(side)
@@ -3356,4 +3600,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -30,6 +30,24 @@ if not exist "dual_keypoint_labeler.py" (
     exit /b 1
 )
 
+REM Install/update dependencies
+echo Installing required dependencies...
+python -m pip install --upgrade pip >nul 2>&1
+if exist "requirements.txt" (
+    python -m pip install -r requirements.txt
+    if errorlevel 1 (
+        echo WARNING: Failed to install some dependencies
+        echo The application may not work correctly
+        echo.
+    ) else (
+        echo Dependencies installed successfully.
+        echo.
+    )
+) else (
+    echo WARNING: requirements.txt not found, installing Pillow directly...
+    python -m pip install Pillow>=9.0.0
+)
+
 REM Run the application
 echo Launching Dual Keypoint Labeler...
 echo.
@@ -47,4 +65,8 @@ if errorlevel 1 (
 echo.
 echo Application closed.
 pause
+
+
+
+
 
