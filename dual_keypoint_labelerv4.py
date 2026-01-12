@@ -64,12 +64,8 @@ class DualKeypointLabeler:
         self.format_mode = "standard"
         self.default_visibility = 2
         
-        # Edit mode (drag/move/add/delete) - initialize early
+        # Edit mode (move/add/delete) - initialize early
         self.edit_mode = tk.StringVar(value="move")
-        
-        # Drag mode tracking
-        self._drag_start_x = None
-        self._drag_start_y = None
         
         # Image synchronization
         self.sync_navigation = False  # Sync both sides when navigating
@@ -128,8 +124,8 @@ class DualKeypointLabeler:
         self.setup_ui()
         
     def setup_ui(self):
-        # Configure root window with professional styling - slate-50 background
-        self.root.config(bg='#F8FAFC')  # slate-50
+        # Configure root window with professional styling
+        self.root.config(bg='#FFFFFF')
         
         # Configure modern ttk styles
         style = ttk.Style()
@@ -201,49 +197,49 @@ class DualKeypointLabeler:
                  darkcolor=[('active', '#1D4ED8')],  # blue-700 when active
                  lightcolor=[('active', '#1D4ED8')])
         
-        # TOP HEADER - white background with border-bottom, shadow-sm
+        # Header bar - enhanced professional top bar with subtle border
         header_frame = tk.Frame(self.root, bg='#FFFFFF', height=56, relief=tk.FLAT, bd=0)
         header_frame.pack(fill=tk.X, side=tk.TOP)
         header_frame.pack_propagate(False)
         
-        # Bottom border for header (border-bottom)
-        header_border = tk.Frame(header_frame, bg='#E2E8F0', height=1)  # slate-200
+        # Header background with subtle gradient effect
+        header_bg = tk.Frame(header_frame, bg='#F8F9FA', height=56)
+        header_bg.pack(fill=tk.BOTH, expand=True)
+        
+        # Bottom border for header
+        header_border = tk.Frame(header_bg, bg='#E9ECEF', height=1)
         header_border.pack(side=tk.BOTTOM, fill=tk.X)
         
-        # Header content container
-        header_content = tk.Frame(header_frame, bg='#FFFFFF', height=56)
-        header_content.pack(fill=tk.BOTH, expand=True, padx=24, pady=12)
+        # App title in header with icon
+        title_container = tk.Frame(header_bg, bg='#F8F9FA')
+        title_container.pack(side=tk.LEFT, padx=24, pady=16)
         
-        # Left side: App title + subtitle
-        title_container = tk.Frame(header_content, bg='#FFFFFF')
-        title_container.pack(side=tk.LEFT)
-        
-        title_label = tk.Label(title_container, text="Keypoint Annotation Tool", 
-                              font=(self.font_family, 18, 'bold'), 
-                              bg='#FFFFFF', fg='#1E293B', anchor='w')  # slate-800
+        title_label = tk.Label(title_container, text="Dual Keypoint Labeler", 
+                              font=(self.font_family, 15, 'bold'), 
+                              bg='#F8F9FA', fg='#212529', anchor='w')
         title_label.pack(side=tk.LEFT)
         
-        subtitle_label = tk.Label(title_container, text="Dual-View Editor", 
-                                 font=(self.font_family, 11), 
-                                 bg='#FFFFFF', fg='#64748B', anchor='w')  # slate-500
-        subtitle_label.pack(side=tk.LEFT, padx=(12, 0))
+        subtitle_label = tk.Label(title_container, text="(FO/DL)", 
+                                 font=(self.font_family, 10), 
+                                 bg='#F8F9FA', fg='#6C757D', anchor='w')
+        subtitle_label.pack(side=tk.LEFT, padx=(8, 0))
         
-        # Right side: Settings, Export, Save Both buttons
-        header_btn_frame = tk.Frame(header_content, bg='#FFFFFF')
-        header_btn_frame.pack(side=tk.RIGHT)
+        # Utility buttons in header (Settings, Export) - enhanced styling
+        header_btn_frame = tk.Frame(header_bg, bg='#F8F9FA')
+        header_btn_frame.pack(side=tk.RIGHT, padx=20, pady=12)
         
-        # Header button style
+        # Enhanced header button style
         header_btn_style = {
-            'font': (self.font_family, 10, 'normal'),
+            'font': (self.font_family, 9, 'normal'),
             'relief': tk.FLAT,
             'bd': 0,
             'padx': 16,
             'pady': 8,
             'cursor': 'hand2',
             'bg': '#FFFFFF',
-            'fg': '#475569',  # slate-600
-            'activebackground': '#F1F5F9',  # slate-100
-            'activeforeground': '#1E293B',  # slate-800
+            'fg': '#495057',
+            'activebackground': '#F1F3F5',
+            'activeforeground': '#212529',
             'highlightthickness': 0
         }
         
@@ -260,24 +256,24 @@ class DualKeypointLabeler:
         
         export_dropdown = tk.Menu(export_menu_btn, tearoff=0, 
                                   font=(self.font_family, 9),
-                                  bg='#FFFFFF', fg='#1E293B',
-                                  activebackground='#F1F5F9', activeforeground='#1E293B',
-                                  selectcolor='#E2E8F0')
+                                  bg='#FFFFFF', fg='#212529',
+                                  activebackground='#F8F9FA', activeforeground='#212529',
+                                  selectcolor='#E9ECEF')
         export_menu_btn.config(menu=export_dropdown)
         export_dropdown.add_command(label="Export Left to COCO...", command=lambda: self.export_to_coco("left"))
         export_dropdown.add_command(label="Export Right to COCO...", command=lambda: self.export_to_coco("right"))
         export_dropdown.add_separator()
         export_dropdown.add_command(label="Export Statistics...", command=self.export_statistics)
         
-        # Save Both button - primary blue button
+        # Save Both button - enhanced with better styling
         save_both_btn = tk.Button(header_btn_frame, text="Save Both", 
-                                 font=(self.font_family, 10, 'bold'),
-                                 bg='#2563EB', fg='#FFFFFF',  # blue-600
-                                 activebackground='#1D4ED8', activeforeground='#FFFFFF',  # blue-700
+                                 font=(self.font_family, 9, 'bold'),
+                                 bg='#007BFF', fg='#FFFFFF',
+                                 activebackground='#0056B3', activeforeground='#FFFFFF',
                                  relief=tk.FLAT, bd=0, padx=18, pady=8, cursor='hand2',
                                  command=self.save_both_sides,
                                  highlightthickness=0)
-        save_both_btn.pack(side=tk.LEFT, padx=(12, 0))
+        save_both_btn.pack(side=tk.LEFT, padx=(8, 0))
         
         # Menu bar (hidden, accessible via header)
         menubar = tk.Menu(self.root)
@@ -299,11 +295,18 @@ class DualKeypointLabeler:
         export_menu.add_command(label="Export Left to YOLO Format...", command=lambda: self.export_to_yolo("left"))
         export_menu.add_command(label="Export Right to YOLO Format...", command=lambda: self.export_to_yolo("right"))
         
-        # MAIN CONTENT AREA - Sidebar + 50/50 split layout (flex-1)
-        main_frame = tk.Frame(self.root, bg='#F8FAFC')  # slate-50
+        # Top frame for file controls - professional styling
+        top_frame = tk.Frame(self.root, bg='#FFFFFF', relief=tk.FLAT, bd=0)
+        top_frame.pack(fill=tk.X, padx=0, pady=0)
+        
+        # Remove top frame - controls will be in each canvas area
+        
+        # Main content area - professional layout
+        main_frame = tk.Frame(self.root, bg='#FFFFFF')
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # LEFT SIDEBAR - modern design with gradient background (320px width)
+        # Left sidebar - modern design with gradient background (320px width)
+        # Slate-50 to slate-100 gradient: #F8FAFC to #F1F5F9
         left_panel = tk.Frame(main_frame, width=320, bg='#F1F5F9', relief=tk.FLAT, bd=0)
         left_panel.pack(side=tk.LEFT, fill=tk.Y)
         left_panel.pack_propagate(False)
@@ -350,6 +353,7 @@ class DualKeypointLabeler:
         bind_to_children(sidebar_scroll)
         
         # Sidebar sections - modern styling matching React design
+        # text-xs font-semibold uppercase tracking-wider text-slate-600
         section_style = {
             'font': (self.font_family, 10, 'bold'),
             'bg': '#F8FAFC',  # slate-50
@@ -359,15 +363,6 @@ class DualKeypointLabeler:
         
         # Initialize active_side_var for internal use (not displayed in UI)
         self.active_side_var = tk.StringVar(value="left")
-        self.format_mode_var = tk.StringVar(value="standard")
-        self.visibility_var = tk.IntVar(value=2)
-        self.skeleton_var = tk.BooleanVar(value=True)
-        self.labels_var = tk.BooleanVar(value=True)
-        self.radius_var = tk.IntVar(value=self.keypoint_radius)
-        
-        # Initialize skeleton variables for left and right sides (checkboxes removed but variables still used)
-        self.left_skeleton_var = tk.BooleanVar(value=True)
-        self.right_skeleton_var = tk.BooleanVar(value=True)
         
         # Navigation Section - 2-col grid for Prev/Next, 3-col for First/Last/Reset
         nav_section_label = tk.Label(sidebar_scroll, text="NAVIGATION", **section_style)
@@ -411,7 +406,7 @@ class DualKeypointLabeler:
         
         # 3-column grid: First/Last (slate-700), Reset (amber-500)
         nav_row2 = tk.Frame(nav_inner, bg='#FFFFFF')
-        nav_row2.pack(fill=tk.X, pady=(8, 0))
+        nav_row2.pack(fill=tk.X, pady=(8, 0))  # space-y-2 = 8px gap
         
         first_btn = tk.Button(nav_row2, text="First", 
                              command=lambda: self.jump_to_image(0),
@@ -461,7 +456,7 @@ class DualKeypointLabeler:
         nav_border = tk.Frame(sidebar_scroll, bg='#E2E8F0', height=1)
         nav_border.pack(fill=tk.X, side=tk.TOP)
         
-        # Edit Mode Section - 4-column grid (drag, move, add, delete)
+        # Edit Mode Section - 3-column grid with icon buttons
         mode_section_label = tk.Label(sidebar_scroll, text="EDIT MODE", **section_style)
         mode_section_label.pack(fill=tk.X, padx=16, pady=(16, 0))
         
@@ -484,42 +479,33 @@ class DualKeypointLabeler:
             'highlightthickness': 0
         }
         
-        self.drag_button = tk.Button(mode_grid, text="Drag", 
-                                     command=lambda: self.set_mode("drag"),
-                                     bg='#F1F5F9', fg='#334155',  # slate-100, slate-700
-                                     activebackground='#E2E8F0', activeforeground='#334155',
-                                     **mode_btn_style)
-        self.drag_button.grid(row=0, column=0, sticky='ew', padx=8)
-        
         self.move_button = tk.Button(mode_grid, text="Move", 
                                      command=lambda: self.set_mode("move"),
                                      bg='#F1F5F9', fg='#334155',  # slate-100, slate-700
                                      activebackground='#E2E8F0', activeforeground='#334155',
                                      **mode_btn_style)
-        self.move_button.grid(row=0, column=1, sticky='ew', padx=8)
+        self.move_button.grid(row=0, column=0, sticky='ew', padx=8)
         
         self.add_button = tk.Button(mode_grid, text="Add", 
                                     command=lambda: self.set_mode("add"),
                                     bg='#F1F5F9', fg='#334155',
                                     activebackground='#E2E8F0', activeforeground='#334155',
                                     **mode_btn_style)
-        self.add_button.grid(row=0, column=2, sticky='ew', padx=8)
+        self.add_button.grid(row=0, column=1, sticky='ew', padx=8)
         
         self.delete_button = tk.Button(mode_grid, text="Delete", 
                                        command=lambda: self.set_mode("delete"),
                                        bg='#F1F5F9', fg='#334155',
                                        activebackground='#E2E8F0', activeforeground='#334155',
                                        **mode_btn_style)
-        self.delete_button.grid(row=0, column=3, sticky='ew', padx=8)
+        self.delete_button.grid(row=0, column=2, sticky='ew', padx=8)
         
         mode_grid.columnconfigure(0, weight=1)
         mode_grid.columnconfigure(1, weight=1)
         mode_grid.columnconfigure(2, weight=1)
-        mode_grid.columnconfigure(3, weight=1)
         
-        # Update button appearance and cursor
+        # Update button appearance
         self.update_mode_buttons()
-        self.update_cursor_for_mode()
         
         # Border separator
         mode_border = tk.Frame(sidebar_scroll, bg='#E2E8F0', height=1)
@@ -537,6 +523,8 @@ class DualKeypointLabeler:
         
         format_grid = tk.Frame(format_inner, bg='#FFFFFF')
         format_grid.pack(fill=tk.X)
+        
+        self.format_mode_var = tk.StringVar(value="standard")
         
         def create_format_toggle(text, value):
             def on_click():
@@ -589,7 +577,7 @@ class DualKeypointLabeler:
         format_border = tk.Frame(sidebar_scroll, bg='#E2E8F0', height=1)
         format_border.pack(fill=tk.X, side=tk.TOP)
         
-        # Visibility controls (COCO mode) - full width buttons
+        # Visibility controls (COCO mode) - full width buttons with icons
         self.visibility_frame = tk.Frame(sidebar_scroll, bg='#FFFFFF', relief=tk.FLAT, bd=0)
         
         visibility_section_label = tk.Label(self.visibility_frame, text="VISIBILITY (COCO)", **section_style)
@@ -598,7 +586,9 @@ class DualKeypointLabeler:
         vis_inner = tk.Frame(self.visibility_frame, bg='#FFFFFF')
         vis_inner.pack(fill=tk.BOTH, expand=True, padx=16, pady=(8, 16))
         
-        # Visibility options - all use blue-600 when active
+        self.visibility_var = tk.IntVar(value=2)
+        
+        # Visibility options - all use blue-600 when active (matching React design)
         vis_options = [
             ("Visible (v=2)", 2),
             ("Occluded (v=1)", 1),
@@ -630,7 +620,7 @@ class DualKeypointLabeler:
                     btn.config(bg='#F1F5F9', fg='#334155')  # slate-100 when inactive
             
             btn.update_func = update_vis_btn
-            btn.pack(fill=tk.X, pady=8)
+            btn.pack(fill=tk.X, pady=8)  # space-y-2 = 8px
             return btn
         
         self.vis_buttons = []
@@ -646,7 +636,7 @@ class DualKeypointLabeler:
         vis_border = tk.Frame(sidebar_scroll, bg='#E2E8F0', height=1)
         vis_border.pack(fill=tk.X, side=tk.TOP)
         
-        # Actions Section
+        # Actions Section - modern layout
         actions_section_label = tk.Label(sidebar_scroll, text="ACTIONS", **section_style)
         actions_section_label.pack(fill=tk.X, padx=16, pady=(16, 0))
         
@@ -656,7 +646,7 @@ class DualKeypointLabeler:
         actions_inner = tk.Frame(actions_frame, bg='#FFFFFF')
         actions_inner.pack(fill=tk.BOTH, expand=True, padx=16, pady=8)
         
-        # Undo/Redo in 2-column grid
+        # Undo/Redo in 2-column grid (slate-100 background)
         undo_redo_frame = tk.Frame(actions_inner, bg='#FFFFFF')
         undo_redo_frame.pack(fill=tk.X, pady=(0, 8))
         
@@ -699,7 +689,7 @@ class DualKeypointLabeler:
             'highlightthickness': 0
         }
         
-        # Clear All: red-50 background with red-700 text and border
+        # Clear All: red-50 background with red-700 text and border (matching React)
         clear_btn_style = action_btn_style.copy()
         clear_btn_style.update({
             'bg': '#FEF2F2',  # red-50
@@ -714,7 +704,7 @@ class DualKeypointLabeler:
                             **clear_btn_style)
         clear_btn.pack(fill=tk.X, pady=(0, 8), ipady=4)
         
-        # Copy buttons: slate-800 background
+        # Copy buttons: slate-800 background - reduced height
         copy_btn = tk.Button(actions_inner, text="Copy Previous (Ctrl+C)", 
                             command=self.copy_from_previous_frame,
                             bg='#1E293B', fg='#FFFFFF',
@@ -748,7 +738,7 @@ class DualKeypointLabeler:
         actions_border = tk.Frame(sidebar_scroll, bg='#E2E8F0', height=1)
         actions_border.pack(fill=tk.X, side=tk.TOP)
         
-        # Visibility Guide Section
+        # Visibility Guide Section - slate-50 background with white cards
         self.visibility_guide_frame = tk.Frame(sidebar_scroll, bg='#F8FAFC', relief=tk.FLAT, bd=0)
         
         guide_section_label = tk.Label(self.visibility_guide_frame, text="VISIBILITY GUIDE", **section_style)
@@ -776,17 +766,17 @@ class DualKeypointLabeler:
         for card in guide_cards:
             card_frame = tk.Frame(guide_inner, bg='#FFFFFF', relief=tk.FLAT, bd=1,
                                  highlightthickness=1, highlightbackground='#E2E8F0')
-            card_frame.pack(fill=tk.X, pady=(0, 12))
+            card_frame.pack(fill=tk.X, pady=(0, 12))  # space-y-3 = 12px
             
             card_content = tk.Frame(card_frame, bg='#FFFFFF')
             card_content.pack(fill=tk.X, padx=12, pady=12)
             
             title_label = tk.Label(card_content, text=card['title'],
                                   font=(self.font_family, 10, 'bold'),
-                                  bg='#FFFFFF', fg='#1E293B', anchor='w')
+                                  bg='#FFFFFF', fg='#1E293B', anchor='w')  # slate-800
             title_label.pack(fill=tk.X, pady=(0, 4))
             
-            # Use Text widget for better text wrapping
+            # Use Text widget for better text wrapping and no cutoff
             content_text = tk.Text(card_content,
                                   font=(self.font_family, 10),
                                   bg='#FFFFFF', fg='#475569',
@@ -798,14 +788,14 @@ class DualKeypointLabeler:
                                   height=4,
                                   width=32)
             content_text.insert('1.0', card['content'])
-            content_text.config(state=tk.DISABLED)
+            content_text.config(state=tk.DISABLED)  # Make it read-only
             content_text.pack(fill=tk.BOTH, expand=True)
         
         # Border separator
         guide_border = tk.Frame(sidebar_scroll, bg='#E2E8F0', height=1)
         guide_border.pack(fill=tk.X, side=tk.TOP)
         
-        # Visual Settings Section
+        # Visual Settings Section - checkboxes and slider
         visual_section_label = tk.Label(sidebar_scroll, text="VISUAL SETTINGS", **section_style)
         visual_section_label.pack(fill=tk.X, padx=16, pady=(16, 0))
         
@@ -815,6 +805,7 @@ class DualKeypointLabeler:
         visual_inner = tk.Frame(visual_frame, bg='#FFFFFF')
         visual_inner.pack(fill=tk.BOTH, expand=True, padx=16, pady=8)
         
+        self.skeleton_var = tk.BooleanVar(value=True)
         tk.Checkbutton(visual_inner, text="Show Skeleton", 
                       variable=self.skeleton_var,
                       command=self.toggle_skeleton,
@@ -823,6 +814,7 @@ class DualKeypointLabeler:
                       selectcolor='#FFFFFF',
                       padx=0, pady=0, anchor='w').pack(fill=tk.X, pady=(0, 12))
         
+        self.labels_var = tk.BooleanVar(value=True)
         tk.Checkbutton(visual_inner, text="Show Keypoint Labels", 
                       variable=self.labels_var,
                       command=self.toggle_labels,
@@ -831,7 +823,7 @@ class DualKeypointLabeler:
                       selectcolor='#FFFFFF',
                       padx=0, pady=0, anchor='w').pack(fill=tk.X, pady=(0, 12))
         
-        # Keypoint Size slider
+        # Keypoint Size slider with value badge (matching React design)
         radius_container = tk.Frame(visual_inner, bg='#FFFFFF')
         radius_container.pack(fill=tk.X)
         
@@ -842,15 +834,17 @@ class DualKeypointLabeler:
                                font=(self.font_family, 9, 'normal'), bg='#FFFFFF', fg='#334155', anchor='w')
         radius_label.pack(side=tk.LEFT)
         
+        # Value badge (blue-600 text, blue-50 background)
         self.radius_value_label = tk.Label(radius_header, text=str(self.keypoint_radius),
                                            font=(self.font_family, 9, 'bold'),
-                                           bg='#EFF6FF', fg='#2563EB',
+                                           bg='#EFF6FF', fg='#2563EB',  # blue-50, blue-600
                                            padx=8, pady=2, relief=tk.FLAT)
         self.radius_value_label.pack(side=tk.RIGHT)
         
         radius_slider_frame = tk.Frame(radius_container, bg='#FFFFFF')
         radius_slider_frame.pack(fill=tk.X)
         
+        self.radius_var = tk.IntVar(value=self.keypoint_radius)
         radius_slider = ttk.Scale(radius_slider_frame, from_=2, to=10, 
                                  variable=self.radius_var, orient=tk.HORIZONTAL,
                                  command=self.on_radius_change,
@@ -858,144 +852,108 @@ class DualKeypointLabeler:
                                  length=280)
         radius_slider.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
-        # Create paned window for 50/50 split display
-        self.image_paned = ttk.PanedWindow(main_frame, orient=tk.HORIZONTAL)
-        self.image_paned.pack(fill=tk.BOTH, expand=True)
+        # Right panel - dual image display (professional styling)
+        right_panel = tk.Frame(main_frame, bg='#FFFFFF')
+        right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        # LEFT PANEL - Blue gradient header, ACTIVE badge
-        self.left_image_frame = tk.Frame(self.image_paned, bg='#F8FAFC')  # slate-50
-        self.image_paned.add(self.left_image_frame, weight=1)
-        
-        # LEFT PANEL HEADER - gradient blue-50 to blue-100
-        left_header = tk.Frame(self.left_image_frame, bg='#EFF6FF', height=100, relief=tk.FLAT, bd=0)  # blue-50
-        left_header.pack(fill=tk.X)
-        left_header.pack_propagate(False)
-        
-        left_header_content = tk.Frame(left_header, bg='#EFF6FF')
-        left_header_content.pack(fill=tk.BOTH, expand=True, padx=20, pady=8)
-        
-        # Title and subtitle
-        left_title_frame = tk.Frame(left_header_content, bg='#EFF6FF')
-        left_title_frame.pack(side=tk.LEFT, fill=tk.Y)
-        
-        self.left_section_label = tk.Label(left_title_frame, text="LEFT (FO)", 
-                                           font=(self.font_family, 16, 'bold'), 
-                                           bg='#EFF6FF', fg='#1E40AF', anchor='w')  # blue-800
-        self.left_section_label.pack(side=tk.TOP, anchor='w')
-        
-        left_subtitle = tk.Label(left_title_frame, text="Front-Oblique View", 
-                                font=(self.font_family, 11), 
-                                bg='#EFF6FF', fg='#3B82F6', anchor='w')  # blue-500
-        left_subtitle.pack(side=tk.TOP, anchor='w', pady=(4, 0))
-        
-        # Buttons frame
-        left_btn_frame = tk.Frame(left_header_content, bg='#EFF6FF')
-        left_btn_frame.pack(side=tk.RIGHT, padx=(0, 12))
-        
-        # Button style
-        panel_btn_style = {
-            'font': (self.font_family, 10, 'normal'),
+        # Define button style before using it
+        top_btn_style = {
+            'font': ('Segoe UI', 9),
             'relief': tk.FLAT,
             'cursor': 'hand2',
             'padx': 14,
             'pady': 8,
-            'bd': 0,
+            'bd': 1,
             'bg': '#FFFFFF',
-            'fg': '#475569',  # slate-600
-            'activebackground': '#F1F5F9',  # slate-100
-            'activeforeground': '#1E293B',  # slate-800
-            'highlightthickness': 0
+            'fg': '#212529',
+            'activebackground': '#E9ECEF',
+            'activeforeground': '#212529'
         }
         
-        # Left buttons - horizontal layout, top-aligned
-        # Select Folder button with label below
-        left_folder_col = tk.Frame(left_btn_frame, bg='#EFF6FF')
-        left_folder_col.pack(side=tk.LEFT, padx=(0, 8), anchor='n')
+        # Create paned window for side-by-side display
+        self.image_paned = ttk.PanedWindow(right_panel, orient=tk.HORIZONTAL)
+        self.image_paned.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
-        left_img_btn = tk.Button(left_folder_col, text="Select Folder", 
+        # Left image panel (FO)
+        self.left_image_frame = tk.Frame(self.image_paned, bg='#FFFFFF')
+        self.image_paned.add(self.left_image_frame, weight=1)
+        
+        # Left controls section - in its own canvas area
+        left_controls_panel = tk.Frame(self.left_image_frame, bg='#F8F9FA', relief=tk.FLAT, bd=0)
+        left_controls_panel.pack(fill=tk.X, padx=0, pady=0)
+        
+        self.left_section_label = tk.Label(left_controls_panel, text="LEFT (FO)", 
+                                           font=(self.font_family, 8, 'bold'), 
+                                           bg='#F8F9FA', fg='#6C757D', anchor='w')
+        self.left_section_label.pack(fill=tk.X, padx=20, pady=(15, 10))
+        
+        left_btn_frame = tk.Frame(left_controls_panel, bg='#F8F9FA')
+        left_btn_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+        
+        left_img_btn = tk.Button(left_btn_frame, text="Select Image Folder", 
                                 command=lambda: self.select_image_folder("left"),
-                                **panel_btn_style)
-        left_img_btn.pack(side=tk.TOP)
+                                **top_btn_style)
+        left_img_btn.pack(side=tk.LEFT, padx=(0, 8))
         
-        # Folder name label (small, below button)
-        self.left_folder_label = tk.Label(left_folder_col, text="", 
-                                         font=(self.font_family, 8),
-                                         bg='#EFF6FF', fg='#64748B',  # slate-500
-                                         anchor='w')
-        self.left_folder_label.pack(side=tk.TOP, fill=tk.X, pady=(2, 0))
-        
-        # Import Annotations button with label below
-        left_ann_col = tk.Frame(left_btn_frame, bg='#EFF6FF')
-        left_ann_col.pack(side=tk.LEFT, padx=(0, 8), anchor='n')
-        
-        left_ann_btn = tk.Button(left_ann_col, text="Import Annotations", 
+        left_ann_btn = tk.Button(left_btn_frame, text="Import Annotations", 
                                 command=lambda: self.import_annotations("left"),
-                                **panel_btn_style)
-        left_ann_btn.pack(side=tk.TOP)
-        
-        # Annotation file name label (small, below button)
-        self.left_annotation_label = tk.Label(left_ann_col, text="", 
-                                             font=(self.font_family, 8),
-                                             bg='#EFF6FF', fg='#64748B',  # slate-500
-                                             anchor='w')
-        self.left_annotation_label.pack(side=tk.TOP, fill=tk.X, pady=(2, 0))
+                                **top_btn_style)
+        left_ann_btn.pack(side=tk.LEFT, padx=(0, 8))
         
         save_left_btn = tk.Button(left_btn_frame, text="Save Left", 
                                  command=lambda: self.save_annotations("left"),
-                                 font=(self.font_family, 10, 'bold'),
-                                 bg='#2563EB', fg='#FFFFFF',  # blue-600
-                                 activebackground='#1D4ED8', activeforeground='#FFFFFF',
-                                 relief=tk.FLAT, bd=0, padx=14, pady=8, cursor='hand2',
-                                 highlightthickness=0)
-        save_left_btn.pack(side=tk.LEFT, padx=(12, 0), anchor='n')
+                                 **top_btn_style)
+        save_left_btn.pack(side=tk.LEFT, padx=(0, 8))
         
-        # Initialize save indicators (hidden, for internal use)
-        self.save_indicators = {
-            "left": tk.Label(left_btn_frame, text="", font=(self.font_family, 1), 
-                            bg='#EFF6FF', fg='#EFF6FF'),
-            "right": None
-        }
-        
-        # File path labels (hidden, for internal use - kept for compatibility)
+        # File path labels on same line as buttons
         self.image_folder_labels = {
-            "left": tk.Label(left_btn_frame, text="", 
-                            font=(self.font_family, 1), bg='#EFF6FF', fg='#EFF6FF'),
-            "right": tk.Label(left_btn_frame, text="", 
-                             font=(self.font_family, 1), bg='#EFF6FF', fg='#EFF6FF')
+            "left": tk.Label(left_btn_frame, text="No folder selected", 
+                            font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D', anchor='w'),
+            "right": tk.Label(left_btn_frame, text="No folder selected", 
+                             font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D', anchor='w')
         }
+        self.image_folder_labels["left"].pack(side=tk.LEFT, padx=(8, 0))
+        
         self.annotation_labels = {
-            "left": tk.Label(left_btn_frame, text="", 
-                           font=(self.font_family, 1), bg='#EFF6FF', fg='#EFF6FF'),
-            "right": tk.Label(left_btn_frame, text="", 
-                            font=(self.font_family, 1), bg='#EFF6FF', fg='#EFF6FF')
+            "left": tk.Label(left_btn_frame, text="No annotation file", 
+                           font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D', anchor='w'),
+            "right": tk.Label(left_btn_frame, text="No annotation file", 
+                            font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D', anchor='w')
         }
+        self.annotation_labels["left"].pack(side=tk.LEFT, padx=(8, 0))
         
-        # LEFT CANVAS AREA - slate-100 background, white canvas with border
-        left_canvas_container = tk.Frame(self.left_image_frame, bg='#F1F5F9')  # slate-100
-        left_canvas_container.pack(fill=tk.BOTH, expand=True, padx=16, pady=16)
+        # Left navigation label (on top of canvas) - also show file paths
+        nav_info_frame = tk.Frame(self.left_image_frame, bg='#F8F9FA')
+        nav_info_frame.pack(fill=tk.X, padx=0, pady=0)
         
-        # Canvas wrapper with border
-        left_canvas_wrapper = tk.Frame(left_canvas_container, bg='#CBD5E1', relief=tk.FLAT, bd=4)  # slate-300 border
-        left_canvas_wrapper.pack(fill=tk.BOTH, expand=True)
+        self.left_nav_label = tk.Label(nav_info_frame, text="Left: 0/0", 
+                                       font=(self.font_family, 9, 'bold'), 
+                                       bg='#F8F9FA', fg='#212529',
+                                       relief=tk.FLAT, bd=0, anchor='w', padx=12, pady=6)
+        self.left_nav_label.pack(side=tk.LEFT)
         
-        # Top-left overlay: "Left: 0/0" badge
-        self.left_nav_label = tk.Label(left_canvas_wrapper, text="Left: 0/0", 
-                                       font=(self.font_family, 10, 'bold'), 
-                                       bg='#1E293B', fg='#FFFFFF',  # slate-800
-                                       relief=tk.FLAT, padx=10, pady=6)
-        self.left_nav_label.place(x=12, y=12)
+        # File path labels on top of canvas
+        self.left_folder_label_canvas = tk.Label(nav_info_frame, text="", 
+                                                 font=(self.font_family, 8), 
+                                                 bg='#F8F9FA', fg='#6C757D', anchor='w')
+        self.left_folder_label_canvas.pack(side=tk.LEFT, padx=(8, 0), fill=tk.X, expand=True)
         
-        # File path labels (hidden, for internal use)
-        self.left_folder_label_canvas = tk.Label(left_canvas_wrapper, text="", 
-                                                 font=(self.font_family, 1), 
-                                                 bg='#FFFFFF', fg='#FFFFFF')
-        self.left_annotation_label_canvas = tk.Label(left_canvas_wrapper, text="", 
-                                                     font=(self.font_family, 1), 
-                                                     bg='#FFFFFF', fg='#FFFFFF')
+        self.left_annotation_label_canvas = tk.Label(nav_info_frame, text="", 
+                                                     font=(self.font_family, 8), 
+                                                     bg='#F8F9FA', fg='#6C757D', anchor='w')
+        self.left_annotation_label_canvas.pack(side=tk.LEFT, padx=(8, 0))
         
-        # Canvas frame with scrollbars
-        left_canvas_frame = tk.Frame(left_canvas_wrapper, bg='#FFFFFF')
-        left_canvas_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        # Initialize save indicators
+        self.save_indicators = {
+            "left": tk.Label(left_btn_frame, text="", font=(self.font_family, 9), 
+                            bg='#F8F9FA', fg='#28A745'),
+            "right": None  # Will be set below
+        }
+        self.save_indicators["left"].pack(side=tk.LEFT, padx=(8, 0))
+        
+        # Left canvas with modern scrollbars
+        left_canvas_frame = tk.Frame(self.left_image_frame, bg='#FFFFFF')
+        left_canvas_frame.pack(fill=tk.BOTH, expand=True)
         
         left_v_scrollbar = ttk.Scrollbar(left_canvas_frame, orient=tk.VERTICAL, style='Modern.Vertical.TScrollbar')
         left_v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -1013,28 +971,6 @@ class DualKeypointLabeler:
         
         left_v_scrollbar.config(command=self.canvases["left"].yview)
         left_h_scrollbar.config(command=self.canvases["left"].xview)
-        
-        # Bottom-right controls: Grid toggle + Fullscreen button (floating)
-        left_controls_overlay = tk.Frame(left_canvas_wrapper, bg='#FFFFFF')
-        left_controls_overlay.place(relx=1.0, rely=1.0, x=-12, y=-12, anchor='se')
-        
-        grid_toggle_btn = tk.Button(left_controls_overlay, text="Grid", 
-                                    font=(self.font_family, 9),
-                                    bg='#FFFFFF', fg='#475569',
-                                    activebackground='#F1F5F9', activeforeground='#1E293B',
-                                    relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
-                                    command=self.toggle_grid,
-                                    highlightthickness=0)
-        grid_toggle_btn.pack(side=tk.LEFT, padx=(0, 8))
-        
-        fullscreen_btn = tk.Button(left_controls_overlay, text="Fullscreen", 
-                                  font=(self.font_family, 9),
-                                  bg='#FFFFFF', fg='#475569',
-                                  activebackground='#F1F5F9', activeforeground='#1E293B',
-                                  relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
-                                  command=lambda: self.toggle_fullscreen("left"),
-                                  highlightthickness=0)
-        fullscreen_btn.pack(side=tk.LEFT)
         
         # Left keypoint list (below canvas) - shows keypoints with coordinates and visibility
         # Split into multiple columns to show all keypoints
@@ -1089,115 +1025,83 @@ class DualKeypointLabeler:
         # Bind double-click to jump to image
         self.left_image_listbox.bind('<Double-Button-1>', lambda e: self.on_image_list_select("left"))
         
+        # Left skeleton checkbox
+        left_skeleton_frame = tk.Frame(self.left_image_frame, bg='#FFFFFF')
+        left_skeleton_frame.pack(fill=tk.X, padx=2, pady=(0, 2))
         
-        # RIGHT PANEL - Slate gradient header, INACTIVE badge
-        self.right_image_frame = tk.Frame(self.image_paned, bg='#F8FAFC')  # slate-50
+        self.left_skeleton_var = tk.BooleanVar(value=True)
+        self.left_skeleton_check = tk.Checkbutton(left_skeleton_frame, text="Show Skeleton (Left)", 
+                                                   variable=self.left_skeleton_var,
+                                                   command=lambda: self.toggle_skeleton_side("left"),
+                                                   font=(self.font_family, 9), bg='#FFFFFF', fg='#1F2937',
+                                                   activebackground='#FFFFFF', activeforeground='#1F2937',
+                                                   selectcolor='#2563EB')
+        self.left_skeleton_check.pack(side=tk.LEFT, padx=5)
+        
+        # Right image panel (DL)
+        self.right_image_frame = tk.Frame(self.image_paned, bg='#FFFFFF')
         self.image_paned.add(self.right_image_frame, weight=1)
         
-        # RIGHT PANEL HEADER - gradient slate-50 to slate-100
-        right_header = tk.Frame(self.right_image_frame, bg='#F1F5F9', height=100, relief=tk.FLAT, bd=0)  # slate-100
-        right_header.pack(fill=tk.X)
-        right_header.pack_propagate(False)
+        # Right controls section - in its own canvas area
+        right_controls_panel = tk.Frame(self.right_image_frame, bg='#F8F9FA', relief=tk.FLAT, bd=0)
+        right_controls_panel.pack(fill=tk.X, padx=0, pady=0)
         
-        right_header_content = tk.Frame(right_header, bg='#F1F5F9')
-        right_header_content.pack(fill=tk.BOTH, expand=True, padx=20, pady=8)
+        self.right_section_label = tk.Label(right_controls_panel, text="RIGHT (DL)", 
+                                            font=(self.font_family, 8, 'bold'), 
+                                            bg='#F8F9FA', fg='#6C757D', anchor='w')
+        self.right_section_label.pack(fill=tk.X, padx=20, pady=(15, 10))
         
-        # Title and subtitle
-        right_title_frame = tk.Frame(right_header_content, bg='#F1F5F9')
-        right_title_frame.pack(side=tk.LEFT, fill=tk.Y)
+        right_btn_frame = tk.Frame(right_controls_panel, bg='#F8F9FA')
+        right_btn_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
         
-        self.right_section_label = tk.Label(right_title_frame, text="RIGHT (DL)", 
-                                            font=(self.font_family, 16, 'bold'), 
-                                            bg='#F1F5F9', fg='#334155', anchor='w')  # slate-700
-        self.right_section_label.pack(side=tk.TOP, anchor='w')
-        
-        right_subtitle = tk.Label(right_title_frame, text="Direct-Lateral View", 
-                                 font=(self.font_family, 11), 
-                                 bg='#F1F5F9', fg='#64748B', anchor='w')  # slate-500
-        right_subtitle.pack(side=tk.TOP, anchor='w', pady=(4, 0))
-        
-        # Buttons frame
-        right_btn_frame = tk.Frame(right_header_content, bg='#F1F5F9')
-        right_btn_frame.pack(side=tk.RIGHT, padx=(0, 12))
-        
-        # Right buttons - horizontal layout
-        # Select Folder button with label below
-        right_folder_col = tk.Frame(right_btn_frame, bg='#F1F5F9')
-        right_folder_col.pack(side=tk.LEFT, padx=(0, 8), anchor='n')
-        
-        right_img_btn = tk.Button(right_folder_col, text="Select Folder", 
+        right_img_btn = tk.Button(right_btn_frame, text="Select Image Folder", 
                                  command=lambda: self.select_image_folder("right"),
-                                 **panel_btn_style)
-        right_img_btn.pack(side=tk.TOP)
+                                 **top_btn_style)
+        right_img_btn.pack(side=tk.LEFT, padx=(0, 8))
         
-        # Folder name label (small, below button)
-        self.right_folder_label = tk.Label(right_folder_col, text="", 
-                                          font=(self.font_family, 8),
-                                          bg='#F1F5F9', fg='#64748B',  # slate-500
-                                          anchor='w')
-        self.right_folder_label.pack(side=tk.TOP, fill=tk.X, pady=(2, 0))
-        
-        # Import Annotations button with label below
-        right_ann_col = tk.Frame(right_btn_frame, bg='#F1F5F9')
-        right_ann_col.pack(side=tk.LEFT, padx=(0, 8), anchor='n')
-        
-        right_ann_btn = tk.Button(right_ann_col, text="Import Annotations", 
+        right_ann_btn = tk.Button(right_btn_frame, text="Import Annotations", 
                                  command=lambda: self.import_annotations("right"),
-                                 **panel_btn_style)
-        right_ann_btn.pack(side=tk.TOP)
-        
-        # Annotation file name label (small, below button)
-        self.right_annotation_label = tk.Label(right_ann_col, text="", 
-                                              font=(self.font_family, 8),
-                                              bg='#F1F5F9', fg='#64748B',  # slate-500
-                                              anchor='w')
-        self.right_annotation_label.pack(side=tk.TOP, fill=tk.X, pady=(2, 0))
+                                 **top_btn_style)
+        right_ann_btn.pack(side=tk.LEFT, padx=(0, 8))
         
         save_right_btn = tk.Button(right_btn_frame, text="Save Right", 
                                   command=lambda: self.save_annotations("right"),
-                                  font=(self.font_family, 10, 'bold'),
-                                  bg='#475569', fg='#FFFFFF',  # slate-600
-                                  activebackground='#334155', activeforeground='#FFFFFF',
-                                  relief=tk.FLAT, bd=0, padx=14, pady=8, cursor='hand2',
-                                  highlightthickness=0)
-        save_right_btn.pack(side=tk.LEFT, anchor='n')
+                                  **top_btn_style)
+        save_right_btn.pack(side=tk.LEFT, padx=(0, 8))
         
-        # Initialize right save indicator (hidden)
-        self.save_indicators["right"] = tk.Label(right_btn_frame, text="", font=(self.font_family, 1), 
-                                                 bg='#F1F5F9', fg='#F1F5F9')
+        # File path labels on same line as buttons
+        self.image_folder_labels["right"].pack(side=tk.LEFT, padx=(8, 0))
+        self.annotation_labels["right"].pack(side=tk.LEFT, padx=(8, 0))
         
-        # File path labels (hidden, for internal use)
-        self.image_folder_labels["right"] = tk.Label(right_btn_frame, text="", 
-                                                     font=(self.font_family, 1), bg='#F1F5F9', fg='#F1F5F9')
-        self.annotation_labels["right"] = tk.Label(right_btn_frame, text="", 
-                                                  font=(self.font_family, 1), bg='#F1F5F9', fg='#F1F5F9')
+        # Initialize right save indicator
+        self.save_indicators["right"] = tk.Label(right_btn_frame, text="", font=(self.font_family, 9), 
+                                                 bg='#F8F9FA', fg='#28A745')
+        self.save_indicators["right"].pack(side=tk.LEFT, padx=(8, 0))
         
-        # RIGHT CANVAS AREA - slate-100 background, white canvas with border
-        right_canvas_container = tk.Frame(self.right_image_frame, bg='#F1F5F9')  # slate-100
-        right_canvas_container.pack(fill=tk.BOTH, expand=True, padx=16, pady=16)
+        # Right navigation label (on top of canvas) - also show file paths
+        nav_info_frame_right = tk.Frame(self.right_image_frame, bg='#F8F9FA')
+        nav_info_frame_right.pack(fill=tk.X, padx=0, pady=0)
         
-        # Canvas wrapper with border
-        right_canvas_wrapper = tk.Frame(right_canvas_container, bg='#CBD5E1', relief=tk.FLAT, bd=4)  # slate-300 border
-        right_canvas_wrapper.pack(fill=tk.BOTH, expand=True)
+        self.right_nav_label = tk.Label(nav_info_frame_right, text="Right: 0/0", 
+                                       font=(self.font_family, 9, 'bold'), 
+                                       bg='#F8F9FA', fg='#212529',
+                                       relief=tk.FLAT, bd=0, anchor='w', padx=12, pady=6)
+        self.right_nav_label.pack(side=tk.LEFT)
         
-        # Top-left overlay: "Right: 0/0" badge
-        self.right_nav_label = tk.Label(right_canvas_wrapper, text="Right: 0/0", 
-                                       font=(self.font_family, 10, 'bold'), 
-                                       bg='#1E293B', fg='#FFFFFF',  # slate-800
-                                       relief=tk.FLAT, padx=10, pady=6)
-        self.right_nav_label.place(x=12, y=12)
+        # File path labels on top of canvas
+        self.right_folder_label_canvas = tk.Label(nav_info_frame_right, text="", 
+                                                  font=(self.font_family, 8), 
+                                                  bg='#F8F9FA', fg='#6C757D', anchor='w')
+        self.right_folder_label_canvas.pack(side=tk.LEFT, padx=(8, 0), fill=tk.X, expand=True)
         
-        # File path labels (hidden, for internal use)
-        self.right_folder_label_canvas = tk.Label(right_canvas_wrapper, text="", 
-                                                  font=(self.font_family, 1), 
-                                                  bg='#FFFFFF', fg='#FFFFFF')
-        self.right_annotation_label_canvas = tk.Label(right_canvas_wrapper, text="", 
-                                                      font=(self.font_family, 1), 
-                                                      bg='#FFFFFF', fg='#FFFFFF')
+        self.right_annotation_label_canvas = tk.Label(nav_info_frame_right, text="", 
+                                                      font=(self.font_family, 8), 
+                                                      bg='#F8F9FA', fg='#6C757D', anchor='w')
+        self.right_annotation_label_canvas.pack(side=tk.LEFT, padx=(8, 0))
         
-        # Canvas frame with scrollbars
-        right_canvas_frame = tk.Frame(right_canvas_wrapper, bg='#FFFFFF')
-        right_canvas_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        # Right canvas with modern scrollbars
+        right_canvas_frame = tk.Frame(self.right_image_frame, bg='#FFFFFF')
+        right_canvas_frame.pack(fill=tk.BOTH, expand=True)
         
         right_v_scrollbar = ttk.Scrollbar(right_canvas_frame, orient=tk.VERTICAL, style='Modern.Vertical.TScrollbar')
         right_v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -1213,28 +1117,6 @@ class DualKeypointLabeler:
         
         right_v_scrollbar.config(command=self.canvases["right"].yview)
         right_h_scrollbar.config(command=self.canvases["right"].xview)
-        
-        # Bottom-right controls: Grid toggle + Fullscreen button (floating)
-        right_controls_overlay = tk.Frame(right_canvas_wrapper, bg='#FFFFFF')
-        right_controls_overlay.place(relx=1.0, rely=1.0, x=-12, y=-12, anchor='se')
-        
-        grid_toggle_btn_right = tk.Button(right_controls_overlay, text="Grid", 
-                                          font=(self.font_family, 9),
-                                          bg='#FFFFFF', fg='#475569',
-                                          activebackground='#F1F5F9', activeforeground='#1E293B',
-                                          relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
-                                          command=self.toggle_grid,
-                                          highlightthickness=0)
-        grid_toggle_btn_right.pack(side=tk.LEFT, padx=(0, 8))
-        
-        fullscreen_btn_right = tk.Button(right_controls_overlay, text="Fullscreen", 
-                                         font=(self.font_family, 9),
-                                         bg='#FFFFFF', fg='#475569',
-                                         activebackground='#F1F5F9', activeforeground='#1E293B',
-                                         relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
-                                         command=lambda: self.toggle_fullscreen("right"),
-                                         highlightthickness=0)
-        fullscreen_btn_right.pack(side=tk.LEFT)
         
         # Right keypoint list (below canvas) - shows keypoints with coordinates and visibility
         # Split into multiple columns to show all keypoints
@@ -1289,6 +1171,19 @@ class DualKeypointLabeler:
         # Bind double-click to jump to image
         self.right_image_listbox.bind('<Double-Button-1>', lambda e: self.on_image_list_select("right"))
         
+        # Right skeleton checkbox
+        right_skeleton_frame = tk.Frame(self.right_image_frame, bg='#FFFFFF')
+        right_skeleton_frame.pack(fill=tk.X, padx=2, pady=(0, 2))
+        
+        self.right_skeleton_var = tk.BooleanVar(value=True)
+        self.right_skeleton_check = tk.Checkbutton(right_skeleton_frame, text="Show Skeleton (Right)", 
+                                                    variable=self.right_skeleton_var,
+                                                    command=lambda: self.toggle_skeleton_side("right"),
+                                                    font=(self.font_family, 9), bg='#FFFFFF', fg='#1F2937',
+                                                    activebackground='#FFFFFF', activeforeground='#1F2937',
+                                                    selectcolor='#2563EB')
+        self.right_skeleton_check.pack(side=tk.LEFT, padx=5)
+        
         # Canvas bindings for both sides
         for side in ["left", "right"]:
             # Bind click to set active side first, then handle keypoint operations
@@ -1299,9 +1194,6 @@ class DualKeypointLabeler:
             self.canvases[side].bind("<MouseWheel>", lambda e, s=side: self.on_mousewheel(e, s))
             self.canvases[side].bind("<Motion>", lambda e, s=side: self.on_canvas_motion(e, s))
             self.canvases[side].focus_set()
-        
-        # Update cursor now that canvases are initialized
-        self.update_cursor_for_mode()
         
         # Initialize active side indication
         self.update_active_side_indication()
@@ -1322,8 +1214,6 @@ class DualKeypointLabeler:
         self.root.bind("<Control-Shift-v>", lambda e: self.copy_visibility_only())
         
         # Additional keyboard shortcuts
-        self.root.bind("<KeyPress-r>", lambda e: self.set_mode("drag"))
-        self.root.bind("<KeyPress-R>", lambda e: self.set_mode("drag"))
         self.root.bind("<KeyPress-m>", lambda e: self.set_mode("move"))
         self.root.bind("<KeyPress-M>", lambda e: self.set_mode("move"))
         self.root.bind("<KeyPress-a>", lambda e: self.set_mode("add"))
@@ -1334,79 +1224,37 @@ class DualKeypointLabeler:
         self.root.bind("<Tab>", lambda e: self.switch_active_side())
         self.root.bind("<Escape>", lambda e: self.deselect_keypoint())
         
-        # BOTTOM STATUS BAR - slate-800 background, white text, ~40px height
-        status_frame = tk.Frame(self.root, bg='#1E293B', height=40, relief=tk.FLAT, bd=0)  # slate-800
+        # Status bar - professional bottom bar
+        status_frame = tk.Frame(self.root, bg='#F8F9FA', height=28, relief=tk.FLAT, bd=0)
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         status_frame.pack_propagate(False)
         
-        status_content = tk.Frame(status_frame, bg='#1E293B')
-        status_content.pack(fill=tk.BOTH, expand=True, padx=20, pady=8)
+        # Divider line
+        divider = tk.Frame(status_frame, bg='#DEE2E6', height=1)
+        divider.pack(fill=tk.X, side=tk.TOP)
         
-        # Left: Mode and Zoom display
-        left_status = tk.Frame(status_content, bg='#1E293B')
-        left_status.pack(side=tk.LEFT)
+        status_content = tk.Frame(status_frame, bg='#F8F9FA')
+        status_content.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
-        self.mode_label = tk.Label(left_status, text="Mode: Move", 
-                                   font=(self.font_family, 9), bg='#1E293B', fg='#FFFFFF',
-                                   relief=tk.FLAT, anchor='w', padx=0)
-        self.mode_label.pack(side=tk.LEFT, padx=(0, 16))
-        
-        self.zoom_label = tk.Label(left_status, text="Zoom: 100%", 
-                                   font=(self.font_family, 9), bg='#1E293B', fg='#FFFFFF',
-                                   relief=tk.FLAT, anchor='w')
-        self.zoom_label.pack(side=tk.LEFT)
-        
-        # Center: Zoom controls (ZoomOut, slider, ZoomIn)
-        center_status = tk.Frame(status_content, bg='#1E293B')
-        center_status.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=40)
-        
-        zoom_out_btn = tk.Button(center_status, text="−", 
-                                 font=(self.font_family, 14, 'bold'),
-                                 bg='#334155', fg='#FFFFFF',  # slate-700
-                                 activebackground='#475569', activeforeground='#FFFFFF',
-                                 relief=tk.FLAT, bd=0, padx=8, pady=2, cursor='hand2',
-                                 command=lambda: self.adjust_zoom(-10),
-                                 highlightthickness=0)
-        zoom_out_btn.pack(side=tk.LEFT, padx=(0, 8))
-        
-        # Zoom slider
-        self.zoom_var = tk.IntVar(value=100)
-        zoom_slider = ttk.Scale(center_status, from_=25, to=200, 
-                               variable=self.zoom_var, orient=tk.HORIZONTAL,
-                               command=self.on_zoom_change,
-                               style='Modern.Horizontal.TScale',
-                               length=200)
-        zoom_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8)
-        
-        zoom_in_btn = tk.Button(center_status, text="+", 
-                                font=(self.font_family, 14, 'bold'),
-                                bg='#334155', fg='#FFFFFF',  # slate-700
-                                activebackground='#475569', activeforeground='#FFFFFF',
-                                relief=tk.FLAT, bd=0, padx=8, pady=2, cursor='hand2',
-                                command=lambda: self.adjust_zoom(10),
-                                highlightthickness=0)
-        zoom_in_btn.pack(side=tk.LEFT, padx=(8, 0))
-        
-        # Right: Keyboard shortcut hint
-        right_status = tk.Frame(status_content, bg='#1E293B')
-        right_status.pack(side=tk.RIGHT)
-        
-        shortcut_label = tk.Label(right_status, text="Press ? for shortcuts", 
-                                  font=(self.font_family, 9), bg='#1E293B', fg='#94A3B8',  # slate-400
-                                  relief=tk.FLAT, anchor='e')
-        shortcut_label.pack(side=tk.RIGHT)
-        
-        # Keep coord labels for internal use (hidden)
         self.coord_labels = {
-            "left": tk.Label(status_content, text="", 
-                           font=(self.font_family, 1), bg='#1E293B', fg='#1E293B'),
-            "right": tk.Label(status_content, text="", 
-                            font=(self.font_family, 1), bg='#1E293B', fg='#1E293B')
+            "left": tk.Label(status_content, text="Left: (0, 0)", 
+                           font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D',
+                           relief=tk.FLAT, width=25, anchor='w', padx=15),
+            "right": tk.Label(status_content, text="Right: (0, 0)", 
+                            font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D',
+                            relief=tk.FLAT, width=25, anchor='w', padx=15)
         }
+        self.coord_labels["left"].pack(side=tk.LEFT)
+        self.coord_labels["right"].pack(side=tk.LEFT)
         
-        # Status bar for messages (hidden, used internally)
-        self.status_bar = tk.Label(status_content, text="", 
-                                   font=(self.font_family, 1), bg='#1E293B', fg='#1E293B')
+        # Status indicator
+        status_indicator = tk.Frame(status_content, bg='#28A745', width=8, height=8)
+        status_indicator.pack(side=tk.RIGHT, padx=(15, 8), pady=10)
+        
+        self.status_bar = tk.Label(status_content, text="Ready", 
+                                   font=(self.font_family, 8), bg='#F8F9FA', fg='#6C757D',
+                                   relief=tk.FLAT, anchor='e', padx=15)
+        self.status_bar.pack(side=tk.RIGHT, fill=tk.X, expand=True)
         
         # Add tooltips to buttons
         self.add_tooltips()
@@ -1479,14 +1327,7 @@ class DualKeypointLabeler:
         folder = filedialog.askdirectory(title=f"Select {side.upper()} Image Folder")
         if folder:
             self.image_folders[side] = folder
-            # Extract folder name (last part of path)
-            folder_name = os.path.basename(os.path.normpath(folder))
-            # Update the visible label with folder name
-            if side == "left" and hasattr(self, 'left_folder_label'):
-                self.left_folder_label.config(text=folder_name)
-            elif side == "right" and hasattr(self, 'right_folder_label'):
-                self.right_folder_label.config(text=folder_name)
-            # Also update hidden labels for compatibility
+            # Show full path, truncate if too long
             display_path = folder if len(folder) <= 50 else "..." + folder[-47:]
             self.image_folder_labels[side].config(text=f"Folder: {display_path}")
             # Also update canvas label
@@ -1538,14 +1379,7 @@ class DualKeypointLabeler:
                 with open(file, 'r') as f:
                     self.annotations_data[side] = json.load(f)
                 self.annotation_files[side] = file
-                # Extract file name (last part of path)
-                file_name = os.path.basename(file)
-                # Update the visible label with file name
-                if side == "left" and hasattr(self, 'left_annotation_label'):
-                    self.left_annotation_label.config(text=file_name)
-                elif side == "right" and hasattr(self, 'right_annotation_label'):
-                    self.right_annotation_label.config(text=file_name)
-                # Also update hidden labels for compatibility
+                # Show full path, truncate if too long
                 display_path = file if len(file) <= 50 else "..." + file[-47:]
                 self.annotation_labels[side].config(text=f"Annotation: {display_path}")
                 # Also update canvas label
@@ -1840,11 +1674,6 @@ class DualKeypointLabeler:
         img = self.current_images[side].copy()
         img_width, img_height = img.size
         
-        # Check for invalid image dimensions to prevent division by zero
-        if img_width <= 0 or img_height <= 0:
-            self.update_status(f"Invalid image dimensions: {img_width}x{img_height}")
-            return
-        
         # Use same scale for both sides to ensure consistent display
         if not self.zoom_modes[side]:
             # Get both canvas sizes
@@ -1864,13 +1693,9 @@ class DualKeypointLabeler:
                 min_canvas_height = canvas_height
             
             # Calculate scale based on image size and canvas size
-            # Ensure we don't divide by zero
-            if img_width > 0 and img_height > 0:
-                scale_w = (min_canvas_width - 40) / img_width
-                scale_h = (min_canvas_height - 40) / img_height
-                calculated_scale = min(scale_w, scale_h, 1.0)
-            else:
-                calculated_scale = 1.0
+            scale_w = (min_canvas_width - 40) / img_width
+            scale_h = (min_canvas_height - 40) / img_height
+            calculated_scale = min(scale_w, scale_h, 1.0)
             
             # If both images are loaded and same size, use same scale for both
             if (self.current_images["left"] and self.current_images["right"] and
@@ -1913,47 +1738,7 @@ class DualKeypointLabeler:
         canvas.create_image(0, 0, anchor=tk.NW, image=self.photo_images[side])
         canvas.config(scrollregion=canvas.bbox("all"))
         
-        # Draw grid overlay if enabled
-        if hasattr(self, 'show_grid') and self.show_grid:
-            self.draw_grid(side)
-        
         self.draw_keypoints(side)
-    
-    def draw_grid(self, side):
-        """Draw grid overlay on canvas - aligned to image coordinates for symmetry"""
-        canvas = self.canvases[side]
-        if not self.current_images[side]:
-            return
-        
-        img_width, img_height = self.current_images[side].size
-        scale_factor = self.scale_factors[side]
-        
-        # Grid spacing in image coordinates (50 pixels)
-        grid_spacing_image = 50
-        
-        # Calculate display dimensions
-        display_width = int(img_width * scale_factor)
-        display_height = int(img_height * scale_factor)
-        
-        # Draw vertical lines - based on image coordinates, then scaled
-        # Start from 0 and draw lines at multiples of grid_spacing_image
-        x_image = 0
-        while x_image <= img_width:
-            x_display = x_image * scale_factor
-            canvas.create_line(x_display, 0, x_display, display_height, 
-                             fill='#CBD5E1', width=1, 
-                             tags='grid', stipple='gray25')
-            x_image += grid_spacing_image
-        
-        # Draw horizontal lines - based on image coordinates, then scaled
-        # Start from 0 and draw lines at multiples of grid_spacing_image
-        y_image = 0
-        while y_image <= img_height:
-            y_display = y_image * scale_factor
-            canvas.create_line(0, y_display, display_width, y_display, 
-                             fill='#CBD5E1', width=1, 
-                             tags='grid', stipple='gray25')
-            y_image += grid_spacing_image
     
     def draw_keypoints(self, side):
         """Draw keypoints for a side"""
@@ -2093,16 +1878,6 @@ class DualKeypointLabeler:
         
         self.canvases[side].focus_set()
         
-        mode = self.edit_mode.get()
-        
-        # Handle drag mode (panning) - doesn't require annotations
-        if mode == "drag":
-            # Start panning by marking the current position
-            self.canvases[side].scan_mark(event.x, event.y)
-            self._drag_start_x = event.x
-            self._drag_start_y = event.y
-            return
-        
         if not self.current_annotations[side]:
             return
         
@@ -2126,6 +1901,8 @@ class DualKeypointLabeler:
         if self.current_images[side]:
             img_x = max(0, min(img_x, self.current_images[side].width))
             img_y = max(0, min(img_y, self.current_images[side].height))
+        
+        mode = self.edit_mode.get()
         
         if mode == "move":
             nearest_idx = self.find_nearest_keypoint(side, img_x, img_y)
@@ -2170,15 +1947,7 @@ class DualKeypointLabeler:
     
     def on_canvas_drag(self, event, side):
         """Handle canvas drag - works on the side being dragged"""
-        mode = self.edit_mode.get()
-        
-        # Handle drag mode (panning)
-        if mode == "drag":
-            # Pan the canvas by dragging
-            self.canvases[side].scan_dragto(event.x, event.y, gain=1)
-            return
-        
-        if self.selected_keypoints[side] is not None and mode == "move":
+        if self.selected_keypoints[side] is not None and self.edit_mode.get() == "move":
             self._was_dragging = True  # Mark that we're dragging
             if self.scale_factors[side] <= 0:
                 return
@@ -2223,14 +1992,6 @@ class DualKeypointLabeler:
     
     def on_canvas_release(self, event, side):
         """Handle canvas release"""
-        mode = self.edit_mode.get()
-        
-        # Clear drag tracking for drag mode
-        if mode == "drag":
-            self._drag_start_x = None
-            self._drag_start_y = None
-            return
-        
         if hasattr(self, '_drag_state_saved'):
             delattr(self, '_drag_state_saved')
         # Don't deselect on release - keep selection for editing
@@ -2246,12 +2007,8 @@ class DualKeypointLabeler:
         canvas_x = self.canvases[side].canvasx(event.x)
         canvas_y = self.canvases[side].canvasy(event.y)
         
-        # Convert canvas coordinates to image coordinates
-        if self.scale_factors[side] > 0:
-            img_x = canvas_x / self.scale_factors[side]
-            img_y = canvas_y / self.scale_factors[side]
-        else:
-            return
+        img_x = canvas_x / self.scale_factors[side]
+        img_y = canvas_y / self.scale_factors[side]
         
         # Check if clicking on a keypoint
         nearest_idx = self.find_nearest_keypoint(side, img_x, img_y)
@@ -2507,135 +2264,6 @@ class DualKeypointLabeler:
             
             self.display_image(side)
     
-    def toggle_grid(self):
-        """Toggle grid overlay on both canvases"""
-        if not hasattr(self, 'show_grid'):
-            self.show_grid = False
-        self.show_grid = not self.show_grid
-        # Redraw both canvases to show/hide grid
-        for side in ["left", "right"]:
-            if self.current_images[side]:
-                self.display_image(side, force=True)
-    
-    def adjust_zoom(self, delta):
-        """Adjust zoom by delta percentage"""
-        current_zoom = self.zoom_var.get()
-        new_zoom = max(25, min(200, current_zoom + delta))
-        self.zoom_var.set(new_zoom)
-        self.on_zoom_change(new_zoom)
-    
-    def on_zoom_change(self, value):
-        """Handle zoom slider change"""
-        try:
-            zoom_percent = int(float(value))
-            self.zoom_label.config(text=f"Zoom: {zoom_percent}%")
-            # Apply zoom to active side canvas
-            side = self.active_side
-            if self.current_images[side]:
-                # Convert percentage to scale factor
-                # Base scale is 1.0, so zoom_percent/100 gives the multiplier
-                zoom_factor = zoom_percent / 100.0
-                
-                # Get base scale (fit-to-window scale)
-                if self.base_scale_factors[side] > 0:
-                    # Apply zoom multiplier to base scale
-                    self.scale_factors[side] = self.base_scale_factors[side] * zoom_factor
-                    self.zoom_modes[side] = (zoom_percent != 100)
-                    self.display_image(side, force=True)
-        except Exception as e:
-            pass
-    
-    def toggle_fullscreen(self, side):
-        """Toggle fullscreen mode for a side"""
-        if not hasattr(self, 'fullscreen_mode'):
-            self.fullscreen_mode = {s: False for s in ["left", "right"]}
-        
-        if not self.fullscreen_mode[side]:
-            # Enter fullscreen
-            self.fullscreen_mode[side] = True
-            
-            # Create fullscreen window
-            if not hasattr(self, '_fullscreen_windows'):
-                self._fullscreen_windows = {}
-            
-            fullscreen_window = tk.Toplevel(self.root)
-            fullscreen_window.attributes('-fullscreen', True)
-            fullscreen_window.configure(bg='black')
-            
-            # Create canvas in fullscreen window
-            fullscreen_canvas = tk.Canvas(fullscreen_window, bg='black', highlightthickness=0)
-            fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
-            
-            # Copy current image to fullscreen canvas
-            if self.current_images[side] and self.photo_images[side]:
-                img_width, img_height = self.current_images[side].size
-                scale_factor = self.scale_factors[side]
-                display_width = int(img_width * scale_factor)
-                display_height = int(img_height * scale_factor)
-                
-                # Center the image
-                screen_width = fullscreen_window.winfo_screenwidth()
-                screen_height = fullscreen_window.winfo_screenheight()
-                x_offset = (screen_width - display_width) // 2
-                y_offset = (screen_height - display_height) // 2
-                
-                fullscreen_canvas.create_image(x_offset, y_offset, anchor=tk.NW, 
-                                              image=self.photo_images[side])
-                fullscreen_canvas.config(scrollregion=(0, 0, screen_width, screen_height))
-                
-                # Draw keypoints on fullscreen canvas
-                if self.current_annotations[side]:
-                    self._draw_keypoints_on_canvas(side, fullscreen_canvas, scale_factor, x_offset, y_offset)
-            
-            # Bind escape key to exit fullscreen
-            def exit_fullscreen(event=None):
-                fullscreen_window.destroy()
-                self.fullscreen_mode[side] = False
-                if hasattr(self, '_fullscreen_windows') and side in self._fullscreen_windows:
-                    del self._fullscreen_windows[side]
-            
-            fullscreen_window.bind('<Escape>', exit_fullscreen)
-            fullscreen_window.bind('<F11>', exit_fullscreen)
-            fullscreen_window.protocol("WM_DELETE_WINDOW", exit_fullscreen)
-            
-            self._fullscreen_windows[side] = fullscreen_window
-        else:
-            # Exit fullscreen
-            if hasattr(self, '_fullscreen_windows') and side in self._fullscreen_windows:
-                self._fullscreen_windows[side].destroy()
-                del self._fullscreen_windows[side]
-            self.fullscreen_mode[side] = False
-    
-    def _draw_keypoints_on_canvas(self, side, canvas, scale_factor, x_offset=0, y_offset=0):
-        """Helper function to draw keypoints on any canvas"""
-        if not self.current_annotations[side]:
-            return
-        
-        keypoints = self.current_annotations[side].get('keypoints', [])
-        if not keypoints:
-            return
-        
-        for idx, kp in enumerate(keypoints):
-            if kp is None or not isinstance(kp, (list, tuple)) or len(kp) < 2:
-                continue
-            
-            try:
-                x, y = float(kp[0]), float(kp[1])
-                display_x = x * scale_factor + x_offset
-                display_y = y * scale_factor + y_offset
-                
-                # Draw keypoint
-                radius = max(3, int(4 * scale_factor))
-                color = self.keypoint_colors[idx % len(self.keypoint_colors)]
-                canvas.create_oval(
-                    display_x - radius, display_y - radius,
-                    display_x + radius, display_y + radius,
-                    fill=color, outline='white', width=1,
-                    tags=f"keypoint_{idx}"
-                )
-            except (ValueError, TypeError):
-                continue
-    
     def reset_zoom(self):
         """Reset zoom to fit-to-window for active side"""
         side = self.active_side
@@ -2852,51 +2480,23 @@ class DualKeypointLabeler:
         """Set edit mode"""
         self.edit_mode.set(mode)
         self.update_mode_buttons()
-        # Update cursor for drag mode
-        self.update_cursor_for_mode()
     
     def update_mode_buttons(self):
         """Update mode button appearance - slate-800 when active (matching React design)"""
         mode = self.edit_mode.get()
         
         # Reset all buttons to default state (slate-100)
-        self.drag_button.config(bg='#F1F5F9', fg='#334155', relief=tk.FLAT)
         self.move_button.config(bg='#F1F5F9', fg='#334155', relief=tk.FLAT)
         self.add_button.config(bg='#F1F5F9', fg='#334155', relief=tk.FLAT)
         self.delete_button.config(bg='#F1F5F9', fg='#334155', relief=tk.FLAT)
         
         # Highlight active button with slate-800 background (matching React design)
-        if mode == "drag":
-            self.drag_button.config(bg='#1E293B', fg='#FFFFFF', relief=tk.FLAT)  # slate-800
-        elif mode == "move":
+        if mode == "move":
             self.move_button.config(bg='#1E293B', fg='#FFFFFF', relief=tk.FLAT)  # slate-800
         elif mode == "add":
             self.add_button.config(bg='#1E293B', fg='#FFFFFF', relief=tk.FLAT)
         elif mode == "delete":
             self.delete_button.config(bg='#1E293B', fg='#FFFFFF', relief=tk.FLAT)
-    
-    def update_cursor_for_mode(self):
-        """Update cursor based on current edit mode"""
-        # Check if canvases are initialized
-        if not hasattr(self, 'canvases') or not self.canvases:
-            return
-        
-        mode = self.edit_mode.get()
-        cursor = 'hand2'  # default
-        
-        if mode == "drag":
-            cursor = 'fleur'  # pan/grabbing hand cursor
-        elif mode == "move":
-            cursor = 'hand2'
-        elif mode == "add":
-            cursor = 'crosshair'  # crosshair for adding points
-        elif mode == "delete":
-            cursor = 'X_cursor'  # X cursor for deletion
-        
-        # Update cursor for both canvases
-        for side in ["left", "right"]:
-            if side in self.canvases:
-                self.canvases[side].config(cursor=cursor)
     
     def on_format_mode_change(self):
         """Handle format mode change"""
@@ -4157,12 +3757,12 @@ class DualKeypointLabeler:
             widget.bind('<Enter>', on_enter)
             widget.bind('<Leave>', on_leave)
         
-        # Add tooltips to mode buttons (if they exist)
-        if hasattr(self, 'move_button') and self.move_button is not None:
+        # Add tooltips to mode buttons
+        if hasattr(self, 'move_button'):
             create_tooltip(self.move_button, "Move keypoints (M)")
-        if hasattr(self, 'add_button') and self.add_button is not None:
+        if hasattr(self, 'add_button'):
             create_tooltip(self.add_button, "Add keypoint (A)")
-        if hasattr(self, 'delete_button') and self.delete_button is not None:
+        if hasattr(self, 'delete_button'):
             create_tooltip(self.delete_button, "Delete keypoint (D)")
     
     def load_settings(self):
