@@ -1025,16 +1025,7 @@ class DualKeypointLabeler:
                                     relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
                                     command=self.toggle_grid,
                                     highlightthickness=0)
-        grid_toggle_btn.pack(side=tk.LEFT, padx=(0, 8))
-        
-        fullscreen_btn = tk.Button(left_controls_overlay, text="Fullscreen", 
-                                  font=(self.font_family, 9),
-                                  bg='#FFFFFF', fg='#475569',
-                                  activebackground='#F1F5F9', activeforeground='#1E293B',
-                                  relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
-                                  command=lambda: self.toggle_fullscreen("left"),
-                                  highlightthickness=0)
-        fullscreen_btn.pack(side=tk.LEFT)
+        grid_toggle_btn.pack(side=tk.LEFT)
         
         # Left keypoint list (below canvas) - shows keypoints with coordinates and visibility
         # Split into multiple columns to show all keypoints
@@ -1225,16 +1216,7 @@ class DualKeypointLabeler:
                                           relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
                                           command=self.toggle_grid,
                                           highlightthickness=0)
-        grid_toggle_btn_right.pack(side=tk.LEFT, padx=(0, 8))
-        
-        fullscreen_btn_right = tk.Button(right_controls_overlay, text="Fullscreen", 
-                                         font=(self.font_family, 9),
-                                         bg='#FFFFFF', fg='#475569',
-                                         activebackground='#F1F5F9', activeforeground='#1E293B',
-                                         relief=tk.FLAT, bd=0, padx=12, pady=8, cursor='hand2',
-                                         command=lambda: self.toggle_fullscreen("right"),
-                                         highlightthickness=0)
-        fullscreen_btn_right.pack(side=tk.LEFT)
+        grid_toggle_btn_right.pack(side=tk.LEFT)
         
         # Right keypoint list (below canvas) - shows keypoints with coordinates and visibility
         # Split into multiple columns to show all keypoints
@@ -1321,15 +1303,17 @@ class DualKeypointLabeler:
         self.root.bind("<Control-Shift-V>", lambda e: self.copy_visibility_only())
         self.root.bind("<Control-Shift-v>", lambda e: self.copy_visibility_only())
         
-        # Additional keyboard shortcuts
-        self.root.bind("<KeyPress-r>", lambda e: self.set_mode("drag"))
-        self.root.bind("<KeyPress-R>", lambda e: self.set_mode("drag"))
-        self.root.bind("<KeyPress-m>", lambda e: self.set_mode("move"))
-        self.root.bind("<KeyPress-M>", lambda e: self.set_mode("move"))
-        self.root.bind("<KeyPress-a>", lambda e: self.set_mode("add"))
-        self.root.bind("<KeyPress-A>", lambda e: self.set_mode("add"))
-        self.root.bind("<KeyPress-d>", lambda e: self.set_mode("delete"))
-        self.root.bind("<KeyPress-D>", lambda e: self.set_mode("delete"))
+        # Additional keyboard shortcuts - Edit modes: q=Drag, w=Move, e=Add, r=Delete
+        self.root.bind("<KeyPress-q>", lambda e: self.set_mode("drag"))
+        self.root.bind("<KeyPress-Q>", lambda e: self.set_mode("drag"))
+        self.root.bind("<KeyPress-w>", lambda e: self.set_mode("move"))
+        self.root.bind("<KeyPress-W>", lambda e: self.set_mode("move"))
+        self.root.bind("<KeyPress-e>", lambda e: self.set_mode("add"))
+        self.root.bind("<KeyPress-E>", lambda e: self.set_mode("add"))
+        self.root.bind("<KeyPress-r>", lambda e: self.set_mode("delete"))
+        self.root.bind("<KeyPress-R>", lambda e: self.set_mode("delete"))
+        self.root.bind("?", lambda e: self.show_shortcuts())
+        self.root.bind("<Shift-?>", lambda e: self.show_shortcuts())
         self.root.bind("<space>", lambda e: self.toggle_skeleton())
         self.root.bind("<Tab>", lambda e: self.switch_active_side())
         self.root.bind("<Escape>", lambda e: self.deselect_keypoint())
@@ -2545,97 +2529,6 @@ class DualKeypointLabeler:
         except Exception as e:
             pass
     
-    def toggle_fullscreen(self, side):
-        """Toggle fullscreen mode for a side"""
-        if not hasattr(self, 'fullscreen_mode'):
-            self.fullscreen_mode = {s: False for s in ["left", "right"]}
-        
-        if not self.fullscreen_mode[side]:
-            # Enter fullscreen
-            self.fullscreen_mode[side] = True
-            
-            # Create fullscreen window
-            if not hasattr(self, '_fullscreen_windows'):
-                self._fullscreen_windows = {}
-            
-            fullscreen_window = tk.Toplevel(self.root)
-            fullscreen_window.attributes('-fullscreen', True)
-            fullscreen_window.configure(bg='black')
-            
-            # Create canvas in fullscreen window
-            fullscreen_canvas = tk.Canvas(fullscreen_window, bg='black', highlightthickness=0)
-            fullscreen_canvas.pack(fill=tk.BOTH, expand=True)
-            
-            # Copy current image to fullscreen canvas
-            if self.current_images[side] and self.photo_images[side]:
-                img_width, img_height = self.current_images[side].size
-                scale_factor = self.scale_factors[side]
-                display_width = int(img_width * scale_factor)
-                display_height = int(img_height * scale_factor)
-                
-                # Center the image
-                screen_width = fullscreen_window.winfo_screenwidth()
-                screen_height = fullscreen_window.winfo_screenheight()
-                x_offset = (screen_width - display_width) // 2
-                y_offset = (screen_height - display_height) // 2
-                
-                fullscreen_canvas.create_image(x_offset, y_offset, anchor=tk.NW, 
-                                              image=self.photo_images[side])
-                fullscreen_canvas.config(scrollregion=(0, 0, screen_width, screen_height))
-                
-                # Draw keypoints on fullscreen canvas
-                if self.current_annotations[side]:
-                    self._draw_keypoints_on_canvas(side, fullscreen_canvas, scale_factor, x_offset, y_offset)
-            
-            # Bind escape key to exit fullscreen
-            def exit_fullscreen(event=None):
-                fullscreen_window.destroy()
-                self.fullscreen_mode[side] = False
-                if hasattr(self, '_fullscreen_windows') and side in self._fullscreen_windows:
-                    del self._fullscreen_windows[side]
-            
-            fullscreen_window.bind('<Escape>', exit_fullscreen)
-            fullscreen_window.bind('<F11>', exit_fullscreen)
-            fullscreen_window.protocol("WM_DELETE_WINDOW", exit_fullscreen)
-            
-            self._fullscreen_windows[side] = fullscreen_window
-        else:
-            # Exit fullscreen
-            if hasattr(self, '_fullscreen_windows') and side in self._fullscreen_windows:
-                self._fullscreen_windows[side].destroy()
-                del self._fullscreen_windows[side]
-            self.fullscreen_mode[side] = False
-    
-    def _draw_keypoints_on_canvas(self, side, canvas, scale_factor, x_offset=0, y_offset=0):
-        """Helper function to draw keypoints on any canvas"""
-        if not self.current_annotations[side]:
-            return
-        
-        keypoints = self.current_annotations[side].get('keypoints', [])
-        if not keypoints:
-            return
-        
-        for idx, kp in enumerate(keypoints):
-            if kp is None or not isinstance(kp, (list, tuple)) or len(kp) < 2:
-                continue
-            
-            try:
-                x, y = float(kp[0]), float(kp[1])
-                display_x = x * scale_factor + x_offset
-                display_y = y * scale_factor + y_offset
-                
-                # Draw keypoint
-                radius = max(3, int(4 * scale_factor))
-                color = self.keypoint_colors[idx % len(self.keypoint_colors)]
-                canvas.create_oval(
-                    display_x - radius, display_y - radius,
-                    display_x + radius, display_y + radius,
-                    fill=color, outline='white', width=1,
-                    tags=f"keypoint_{idx}"
-                )
-            except (ValueError, TypeError):
-                continue
-    
     def reset_zoom(self):
         """Reset zoom to fit-to-window for active side"""
         side = self.active_side
@@ -3806,29 +3699,82 @@ class DualKeypointLabeler:
         messagebox.showinfo("Info", f"YOLO export for {side} - implement as needed")
     
     def edit_keypoint_names(self):
-        """Open dialog to edit keypoint names"""
+        """Open dialog to edit keypoint names - Modern UI"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Edit Keypoint Names")
-        dialog.geometry("600x700")
+        dialog.geometry("700x750")
         dialog.transient(self.root)
         dialog.grab_set()
+        dialog.config(bg='#F8FAFC')  # slate-50 background
         
-        # Create notebook for tabs
-        notebook = ttk.Notebook(dialog)
-        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Header
+        header_frame = tk.Frame(dialog, bg='#FFFFFF', height=60, relief=tk.FLAT, bd=0)
+        header_frame.pack(fill=tk.X)
+        header_frame.pack_propagate(False)
+        
+        header_content = tk.Frame(header_frame, bg='#FFFFFF')
+        header_content.pack(fill=tk.BOTH, expand=True, padx=20, pady=12)
+        
+        title_label = tk.Label(header_content, text="Edit Keypoint Names", 
+                               font=(self.font_family, 18, 'bold'),
+                               bg='#FFFFFF', fg='#1E293B', anchor='w')
+        title_label.pack(side=tk.LEFT)
+        
+        # Main content area
+        main_frame = tk.Frame(dialog, bg='#F8FAFC')
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Configure modern notebook tab styling
+        style = ttk.Style()
+        style.configure('Modern.TNotebook', 
+                       background='#F8FAFC',
+                       borderwidth=0)
+        style.configure('Modern.TNotebook.Tab',
+                       background='#F1F5F9',  # slate-100
+                       foreground='#475569',  # slate-600
+                       padding=[20, 12],
+                       borderwidth=0,
+                       font=(self.font_family, 10))
+        style.map('Modern.TNotebook.Tab',
+                 background=[('selected', '#FFFFFF'),  # white when selected
+                           ('active', '#E2E8F0')],  # slate-200 on hover
+                 foreground=[('selected', '#1E293B'),  # slate-800 when selected
+                           ('active', '#334155')])  # slate-700 on hover
+        
+        # Create notebook for tabs with modern styling
+        notebook = ttk.Notebook(main_frame, style='Modern.TNotebook')
+        notebook.pack(fill=tk.BOTH, expand=True)
         
         # Tab 1: Dictionary format input
-        dict_frame = ttk.Frame(notebook, padding="10")
+        dict_frame = tk.Frame(notebook, bg='#FFFFFF')
         notebook.add(dict_frame, text="Dictionary Format")
         
-        ttk.Label(dict_frame, text="Paste or edit dictionary format:", font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(0, 5))
+        dict_inner = tk.Frame(dict_frame, bg='#FFFFFF')
+        dict_inner.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Text area for dictionary input
-        text_frame = ttk.Frame(dict_frame)
-        text_frame.pack(fill=tk.BOTH, expand=True)
+        dict_label = tk.Label(dict_inner, text="Paste or edit dictionary format:", 
+                             font=(self.font_family, 11, 'bold'),
+                             bg='#FFFFFF', fg='#1E293B', anchor='w')
+        dict_label.pack(anchor=tk.W, pady=(0, 12))
         
-        dict_text = tk.Text(text_frame, wrap=tk.WORD, font=('Courier', 10), height=20)
-        dict_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=dict_text.yview)
+        # Text area for dictionary input with modern styling
+        text_container = tk.Frame(dict_inner, bg='#F1F5F9', relief=tk.FLAT, bd=1)
+        text_container.pack(fill=tk.BOTH, expand=True)
+        
+        text_frame = tk.Frame(text_container, bg='#FFFFFF')
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        
+        dict_text = tk.Text(text_frame, wrap=tk.WORD, 
+                           font=(self.font_family, 10), 
+                           bg='#FFFFFF', fg='#1E293B',
+                           relief=tk.FLAT, bd=0,
+                           insertbackground='#2563EB',
+                           selectbackground='#DBEAFE',
+                           selectforeground='#1E293B',
+                           height=20)
+        dict_scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, 
+                                      command=dict_text.yview,
+                                      style='Modern.Vertical.TScrollbar')
         dict_text.configure(yscrollcommand=dict_scrollbar.set)
         
         # Pre-fill with current dictionary format
@@ -3842,13 +3788,26 @@ class DualKeypointLabeler:
         dict_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
         # Tab 2: Individual fields
-        fields_frame = ttk.Frame(notebook, padding="10")
+        fields_frame = tk.Frame(notebook, bg='#FFFFFF')
         notebook.add(fields_frame, text="Individual Fields")
         
+        fields_inner = tk.Frame(fields_frame, bg='#FFFFFF')
+        fields_inner.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        fields_label = tk.Label(fields_inner, text="Edit individual keypoint names:", 
+                               font=(self.font_family, 11, 'bold'),
+                               bg='#FFFFFF', fg='#1E293B', anchor='w')
+        fields_label.pack(anchor=tk.W, pady=(0, 12))
+        
         # Scrollable frame for individual fields
-        canvas = tk.Canvas(fields_frame)
-        scrollbar = ttk.Scrollbar(fields_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        scroll_container = tk.Frame(fields_inner, bg='#F1F5F9', relief=tk.FLAT, bd=1)
+        scroll_container.pack(fill=tk.BOTH, expand=True)
+        
+        canvas = tk.Canvas(scroll_container, bg='#FFFFFF', highlightthickness=0)
+        scrollbar = ttk.Scrollbar(scroll_container, orient="vertical", 
+                                 command=canvas.yview,
+                                 style='Modern.Vertical.TScrollbar')
+        scrollable_frame = tk.Frame(canvas, bg='#FFFFFF')
         
         scrollable_frame.bind(
             "<Configure>",
@@ -3858,16 +3817,29 @@ class DualKeypointLabeler:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Entry fields for each keypoint
+        # Entry fields for each keypoint with modern styling
         entry_vars = []
         for i in range(len(self.keypoint_names)):
-            row_frame = ttk.Frame(scrollable_frame)
-            row_frame.pack(fill=tk.X, pady=2)
+            row_frame = tk.Frame(scrollable_frame, bg='#FFFFFF')
+            row_frame.pack(fill=tk.X, pady=4, padx=8)
             
-            ttk.Label(row_frame, text=f"KP{i}:", width=8).pack(side=tk.LEFT, padx=5)
+            kp_label = tk.Label(row_frame, text=f"KP{i}:", 
+                               font=(self.font_family, 10),
+                               bg='#FFFFFF', fg='#475569', width=8, anchor='w')
+            kp_label.pack(side=tk.LEFT, padx=(0, 12))
+            
             var = tk.StringVar(value=self.keypoint_names[i])
-            entry = ttk.Entry(row_frame, textvariable=var, width=30)
-            entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+            entry = tk.Entry(row_frame, textvariable=var, 
+                            font=(self.font_family, 10),
+                            bg='#FFFFFF', fg='#1E293B',
+                            relief=tk.FLAT, bd=1,
+                            highlightthickness=1,
+                            highlightcolor='#2563EB',
+                            highlightbackground='#CBD5E1',
+                            insertbackground='#2563EB',
+                            selectbackground='#DBEAFE',
+                            selectforeground='#1E293B')
+            entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True, ipady=6)
             entry_vars.append(var)
         
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -3971,26 +3943,60 @@ class DualKeypointLabeler:
             else:
                 messagebox.showerror("Error", f"Failed to parse dictionary:\n{error}")
         
-        # Buttons
-        button_frame = ttk.Frame(dialog, padding="10")
-        button_frame.pack(fill=tk.X)
         
-        # Dictionary tab buttons
-        dict_button_frame = ttk.Frame(dict_frame)
-        dict_button_frame.pack(fill=tk.X, pady=(10, 0))
-        ttk.Button(dict_button_frame, text="Load from Dictionary", command=load_from_dict).pack(side=tk.LEFT, padx=5)
-        ttk.Button(dict_button_frame, text="Save from Dictionary", command=save_from_dict).pack(side=tk.LEFT, padx=5)
+        # Bottom button frame - all buttons in one row
+        bottom_frame = tk.Frame(dialog, bg='#F8FAFC')
+        bottom_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
         
-        # Fields tab buttons
-        fields_button_frame = ttk.Frame(fields_frame)
-        fields_button_frame.pack(fill=tk.X, pady=(10, 0))
-        ttk.Button(fields_button_frame, text="Save", command=save_from_fields).pack(side=tk.LEFT, padx=5)
+        # Left side buttons
+        left_buttons = tk.Frame(bottom_frame, bg='#F8FAFC')
+        left_buttons.pack(side=tk.LEFT)
         
-        # Common buttons
-        ttk.Button(button_frame, text="Save", command=save_from_fields).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Reset to Default", 
-                  command=lambda: self.reset_keypoint_names(entry_vars, dict_text)).pack(side=tk.LEFT, padx=5)
+        load_btn = tk.Button(left_buttons, text="Load from Dictionary", 
+                           command=load_from_dict,
+                           font=(self.font_family, 10),
+                           bg='#F1F5F9', fg='#475569',
+                           activebackground='#E2E8F0', activeforeground='#1E293B',
+                           relief=tk.FLAT, bd=0, padx=16, pady=10,
+                           cursor='hand2', highlightthickness=0)
+        load_btn.pack(side=tk.LEFT, padx=(0, 8))
+        
+        save_dict_btn = tk.Button(left_buttons, text="Save from Dictionary", 
+                                 command=save_from_dict,
+                                 font=(self.font_family, 10, 'bold'),
+                                 bg='#2563EB', fg='#FFFFFF',
+                                 activebackground='#1D4ED8', activeforeground='#FFFFFF',
+                                 relief=tk.FLAT, bd=0, padx=16, pady=10,
+                                 cursor='hand2', highlightthickness=0)
+        save_dict_btn.pack(side=tk.LEFT, padx=(0, 8))
+        
+        save_fields_btn = tk.Button(left_buttons, text="Save", 
+                                   command=save_from_fields,
+                                   font=(self.font_family, 10, 'bold'),
+                                   bg='#2563EB', fg='#FFFFFF',
+                                   activebackground='#1D4ED8', activeforeground='#FFFFFF',
+                                   relief=tk.FLAT, bd=0, padx=16, pady=10,
+                                   cursor='hand2', highlightthickness=0)
+        save_fields_btn.pack(side=tk.LEFT, padx=(0, 8))
+        
+        reset_btn = tk.Button(left_buttons, text="Reset to Default", 
+                             command=lambda: self.reset_keypoint_names(entry_vars, dict_text),
+                             font=(self.font_family, 10),
+                             bg='#F1F5F9', fg='#475569',
+                             activebackground='#E2E8F0', activeforeground='#1E293B',
+                             relief=tk.FLAT, bd=0, padx=16, pady=10,
+                             cursor='hand2', highlightthickness=0)
+        reset_btn.pack(side=tk.LEFT)
+        
+        # Right side button
+        cancel_btn = tk.Button(bottom_frame, text="Cancel", 
+                              command=dialog.destroy,
+                              font=(self.font_family, 10),
+                              bg='#F1F5F9', fg='#475569',
+                              activebackground='#E2E8F0', activeforeground='#1E293B',
+                              relief=tk.FLAT, bd=0, padx=16, pady=10,
+                              cursor='hand2', highlightthickness=0)
+        cancel_btn.pack(side=tk.RIGHT)
     
     def reset_keypoint_names(self, entry_vars, dict_text=None):
         """Reset keypoint names to default"""
@@ -4130,6 +4136,36 @@ class DualKeypointLabeler:
             self.selected_keypoints[side] = None
             self.display_image(side, force=True)
             self.update_status("Keypoint deselected")
+    
+    def show_shortcuts(self):
+        """Show keyboard shortcuts help dialog"""
+        shortcuts_text = """Keyboard Shortcuts:
+
+Edit Modes:
+  Q - Drag (pan zoomed image)
+  W - Move keypoints
+  E - Add keypoint
+  R - Delete keypoint
+
+Navigation:
+  ↑ / ↓ - Previous/Next image (active side)
+  ← / → - Previous/Next image (both sides)
+  Tab - Switch active side
+
+Actions:
+  Ctrl+C - Copy from previous frame
+  Ctrl+B - Copy from previous frame (both sides)
+  Ctrl+Z - Undo
+  Ctrl+Y - Redo
+  Ctrl+Shift+A - Copy keypoints only
+  Ctrl+Shift+V - Copy visibility only
+
+Other:
+  Space - Toggle skeleton
+  Escape - Deselect keypoint
+  ? - Show this help"""
+        
+        messagebox.showinfo("Keyboard Shortcuts", shortcuts_text)
     
     def update_status_display(self):
         """Update status bar display periodically"""
